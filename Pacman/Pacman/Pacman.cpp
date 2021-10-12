@@ -5,6 +5,7 @@
 Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv)
 {
 	_frameCount = 0;
+	movementState = 5;
 
 	//Initialise important Game aspects
 	Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Pacman", 60);
@@ -47,9 +48,44 @@ void Pacman::Update(int elapsedTime)
 	// Gets the current state of the keyboard
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
 
-	// Checks if D key is pressed
 	if (keyboardState->IsKeyDown(Input::Keys::D))
-		_pacmanPosition->X += 0.1f * elapsedTime; //Moves Pacman across X axis
+		movementState = 1;
+	if (keyboardState->IsKeyDown(Input::Keys::A))
+		movementState = 2;
+	if (keyboardState->IsKeyDown(Input::Keys::W))
+		movementState = 3;
+	if (keyboardState->IsKeyDown(Input::Keys::S))
+		movementState = 4;
+
+	switch (movementState) {
+	case 1:
+		_pacmanPosition->X += 0.1f * elapsedTime;
+		break;
+	case 2:
+		_pacmanPosition->X -= 0.1f * elapsedTime;
+		break;
+	case 3:
+		_pacmanPosition->Y -= 0.1f * elapsedTime;
+		break;
+	case 4:
+		_pacmanPosition->Y += 0.1f * elapsedTime;
+		break;
+	}
+
+	if (_pacmanPosition->X > 1024 + _pacmanSourceRect->Width)
+	{
+		_pacmanPosition->X = 0 - _pacmanSourceRect->Width;
+	}
+	if (_pacmanPosition->X < 0 - _pacmanSourceRect->Width) {
+		_pacmanPosition->X = 1024 + _pacmanSourceRect->Width;
+	}
+	if (_pacmanPosition->Y > 768 + _pacmanSourceRect->Width) {
+		_pacmanPosition->Y = 0 - _pacmanSourceRect->Width;
+	}
+	if (_pacmanPosition->Y < 0 - _pacmanSourceRect->Width) {
+		_pacmanPosition->Y = 768 + _pacmanSourceRect->Width;
+	}
+
 }
 
 void Pacman::Draw(int elapsedTime)

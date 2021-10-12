@@ -34,6 +34,8 @@ private:
 	// Position for String
 	Vector2* _stringPosition;
 
+	int movementState;
+
 public:
 	/// <summary> Constructs the Pacman class. </summary>
 	Pacman(int argc, char* argv[]);
