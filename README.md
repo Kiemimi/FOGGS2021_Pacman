@@ -1,2 +1,3 @@
 # FOGGS2021_Pacman
- A framework for Pacman to be worked on for FOGGS 2021 @ Staffordshire University
+Code project based on the Staffordshire University S2D Library</br>
+Year 1 Project by May Broome
