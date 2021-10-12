@@ -60,15 +60,19 @@ void Pacman::Update(int elapsedTime)
 	switch (movementState) {
 	case 1:
 		_pacmanPosition->X += 0.1f * elapsedTime;
+		_pacmanSourceRect->Y = 0;
 		break;
 	case 2:
 		_pacmanPosition->X -= 0.1f * elapsedTime;
+		_pacmanSourceRect->Y = 64;
 		break;
 	case 3:
 		_pacmanPosition->Y -= 0.1f * elapsedTime;
+		_pacmanSourceRect->Y = 98;
 		break;
 	case 4:
 		_pacmanPosition->Y += 0.1f * elapsedTime;
+		_pacmanSourceRect->Y = 32;
 		break;
 	}
 
@@ -101,16 +105,15 @@ void Pacman::Draw(int elapsedTime)
 	{
 		// Draws Red Munchie
 		SpriteBatch::Draw(_munchieInvertedTexture, _munchieRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
-
+		_pacmanSourceRect->X = 0;
 		_frameCount++;
 	}
 	else
 	{
 		// Draw Blue Munchie
 		SpriteBatch::Draw(_munchieBlueTexture, _munchieRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
-		
+		_pacmanSourceRect->X = 32;
 		_frameCount++;
-
 		if (_frameCount >= 60)
 			_frameCount = 0;
 	}
