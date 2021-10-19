@@ -24,6 +24,7 @@ private:
 	Vector2* _pacmanPosition;
 	Rect* _pacmanSourceRect;
 	Texture2D* _pacmanTexture;
+	const float _cPacmanSpeed;
 
 	// Data to represent Munchie
 	int _frameCount;
@@ -34,7 +35,16 @@ private:
 	// Position for String
 	Vector2* _stringPosition;
 
+	// Enum for types of movement
 	int movementState;
+
+	// Data for Menu
+	Texture2D* _menuBackground; 
+	Rect* _menuRectangle; 
+	Vector2* _menuStringPosition; 
+	bool _paused;
+	bool _pKeyDown;
+	bool gameStarted;
 
 public:
 	/// <summary> Constructs the Pacman class. </summary>
