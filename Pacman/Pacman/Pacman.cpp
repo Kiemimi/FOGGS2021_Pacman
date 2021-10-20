@@ -119,14 +119,10 @@ void Pacman::Update(int elapsedTime)
 				_pacmanPosition->Y = Graphics::GetViewportHeight() + _pacmanSourceRect->Width;
 
 			// Controls other Pacman collision
-			if (_pacmanPosition->X + _pacmanSourceRect->Width > _munchieRect->X 
-				&& _pacmanPosition->X < _munchieRect->X + _munchieRect->Width
-				&& _pacmanPosition->Y + _pacmanSourceRect->Height > _munchieRect->Y
-				&& _pacmanPosition->Y < _munchieRect->Y + _munchieRect->Height)
-			{
+			if (Collision(_munchieRect)) {
+				delete _munchieRect;
 				Score += 100;
 			}
-			
 
 			if (_frameCount >= 60)
 				_frameCount = 0;
@@ -187,4 +183,15 @@ void Pacman::Draw(int elapsedTime)
 	}
 
 	SpriteBatch::EndDraw(); // Ends Drawing
+}
+
+bool Pacman::Collision(Rect* Actor) {
+	if (_pacmanPosition->X + _pacmanSourceRect->Width > Actor->X
+		&& _pacmanPosition->X < Actor->X + Actor->Width
+		&& _pacmanPosition->Y + _pacmanSourceRect->Height > Actor->Y
+		&& _pacmanPosition->Y < Actor->Y + Actor->Height)
+	{
+		return true;
+	}
+	else return false;
 }
