@@ -25,6 +25,7 @@ private:
 	Rect* _pacmanSourceRect;
 	Texture2D* _pacmanTexture;
 	const float _cPacmanSpeed;
+	int Score;
 
 	// Data to represent Munchie
 	int _frameCount;

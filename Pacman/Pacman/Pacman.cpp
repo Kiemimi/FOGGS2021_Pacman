@@ -1,11 +1,12 @@
 #include "Pacman.h"
-
+#include <iostream>
 #include <sstream>
 
 Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.1f), _pKeyDown(false), gameStarted(false)
 {
 	_frameCount = 0;
 	movementState = 5;
+	Score = 0;
 	_paused = false;
 
 	//Initialise important Game aspects
@@ -29,7 +30,7 @@ void Pacman::LoadContent()
 {
 	// Load Pacman
 	_pacmanTexture = new Texture2D();
-	_pacmanTexture->Load("Textures/Pacman.tga", false);
+	_pacmanTexture->Load("Textures/Pacman.png", false);
 	_pacmanPosition = new Vector2(350.0f, 350.0f);
 	_pacmanSourceRect = new Rect(0.0f, 0.0f, 32, 32);
 
@@ -47,7 +48,7 @@ void Pacman::LoadContent()
 	_menuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2, Graphics::GetViewportHeight() / 2);
 
 	// Set string position
-	_stringPosition = new Vector2(10.0f, 25.0f);
+	_stringPosition = new Vector2(Graphics::GetViewportWidth() / 2 - 50, 50.0f);
 }
 
 void Pacman::Update(int elapsedTime)
@@ -63,15 +64,12 @@ void Pacman::Update(int elapsedTime)
 	if (gameStarted)
 	{
 		// Handles pausing, stops the game loop running while true
-		if (keyboardState->IsKeyDown(Input::Keys::P) && !_pKeyDown)
-		{
+		if (keyboardState->IsKeyDown(Input::Keys::P) && !_pKeyDown) {
 			_pKeyDown = true;
 			_paused = !_paused;
 		}
 		if (keyboardState->IsKeyUp(Input::Keys::P))
-		{
 			_pKeyDown = false;
-		}
 
 		if (!_paused)
 		{
@@ -99,7 +97,7 @@ void Pacman::Update(int elapsedTime)
 				break;
 			case 3:
 				_pacmanPosition->Y -= _cPacmanSpeed * elapsedTime;
-				_pacmanSourceRect->Y = 98;
+				_pacmanSourceRect->Y = 96;
 				break;
 			case 4:
 				_pacmanPosition->Y += _cPacmanSpeed * elapsedTime;
@@ -109,18 +107,29 @@ void Pacman::Update(int elapsedTime)
 
 			// Controls Pacman's screen wrapping, teleporting him to the other end of the screen if he reaches the end of the viewport
 			if (_pacmanPosition->X > Graphics::GetViewportWidth() + _pacmanSourceRect->Width)
-			{
 				_pacmanPosition->X = 0 - _pacmanSourceRect->Width;
-			}
-			if (_pacmanPosition->X < 0 - _pacmanSourceRect->Width) {
+
+			if (_pacmanPosition->X < 0 - _pacmanSourceRect->Width)
 				_pacmanPosition->X = Graphics::GetViewportWidth() + _pacmanSourceRect->Width;
-			}
-			if (_pacmanPosition->Y > Graphics::GetViewportHeight() + _pacmanSourceRect->Width) {
+
+			if (_pacmanPosition->Y > Graphics::GetViewportHeight() + _pacmanSourceRect->Width)
 				_pacmanPosition->Y = 0 - _pacmanSourceRect->Width;
-			}
-			if (_pacmanPosition->Y < 0 - _pacmanSourceRect->Width) {
+
+			if (_pacmanPosition->Y < 0 - _pacmanSourceRect->Width)
 				_pacmanPosition->Y = Graphics::GetViewportHeight() + _pacmanSourceRect->Width;
+
+			// Controls other Pacman collision
+			if (_pacmanPosition->X + _pacmanSourceRect->Width > _munchieRect->X 
+				&& _pacmanPosition->X < _munchieRect->X + _munchieRect->Width
+				&& _pacmanPosition->Y + _pacmanSourceRect->Height > _munchieRect->Y
+				&& _pacmanPosition->Y < _munchieRect->Y + _munchieRect->Height)
+			{
+				Score += 100;
 			}
+			
+
+			if (_frameCount >= 60)
+				_frameCount = 0;
 		}
 	}
 }
@@ -129,7 +138,7 @@ void Pacman::Draw(int elapsedTime)
 {
 	// Allows us to easily create a string
 	std::stringstream stream;
-	stream << "Pacman X: " << _pacmanPosition->X << " Y: " << _pacmanPosition->Y;
+	stream << "Score: " << Score;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 	SpriteBatch::Draw(_pacmanTexture, _pacmanPosition, _pacmanSourceRect); // Draws Pacman
@@ -145,12 +154,19 @@ void Pacman::Draw(int elapsedTime)
 		// Draw Blue Munchie
 		SpriteBatch::Draw(_munchieBlueTexture, _munchieRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
 		_pacmanSourceRect->X = 32;
-		if (_frameCount >= 60)
-			_frameCount = 0;
 	}
+
+	if (_frameCount < 15)
+		_pacmanSourceRect->X = 0;
+	else if (_frameCount < 30)
+		_pacmanSourceRect->X = 32;
+	else if (_frameCount < 45)
+		_pacmanSourceRect->X = 64;
+	else if (_frameCount < 60)
+		_pacmanSourceRect->X = 32;
 	
 	// Draws String
-	SpriteBatch::DrawString(stream.str().c_str(), _stringPosition, Color::Green);
+	SpriteBatch::DrawString(stream.str().c_str(), _stringPosition, Color::White);
 	
 	if (_paused)
 	{
