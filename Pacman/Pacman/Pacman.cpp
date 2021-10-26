@@ -2,9 +2,12 @@
 #include <iostream>
 #include <sstream>
 
-Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.1f), _pKeyDown(false), gameStarted(false)
+Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.20f), _pKeyDown(false), gameStarted(false), _cPacmanFrameTime(250), _cMunchieFrameTime(250)
 {
-	_frameCount = 0;
+	_munchieFrameCount = 0;
+	_pacmanCurrentFrameTime = 0;
+	_pacmanFrame = 0;
+	_munchieCurrentFrameTime = 0;
 	movementState = 5;
 	Score = 0;
 	_paused = false;
@@ -22,7 +25,6 @@ Pacman::~Pacman()
 	delete _pacmanTexture;
 	delete _pacmanSourceRect;
 	delete _munchieBlueTexture;
-	delete _munchieInvertedTexture;
 	delete _munchieRect;
 }
 
@@ -32,14 +34,14 @@ void Pacman::LoadContent()
 	_pacmanTexture = new Texture2D();
 	_pacmanTexture->Load("Textures/Pacman.png", false);
 	_pacmanPosition = new Vector2(350.0f, 350.0f);
-	_pacmanSourceRect = new Rect(0.0f, 0.0f, 32, 32);
+	_pacmanSourceRect = new Rect(350.0f, 350.0f, 32, 32);
 
 	// Load Munchie
 	_munchieBlueTexture = new Texture2D();
-	_munchieBlueTexture->Load("Textures/Munchie.tga", true);
-	_munchieInvertedTexture = new Texture2D();
-	_munchieInvertedTexture->Load("Textures/MunchieInverted.tga", true);
-	_munchieRect = new Rect(100.0f, 450.0f, 12, 12);
+	_munchieBlueTexture->Load("Textures/Munchie.png", true);
+	_munchieRect = new Rect(0.0f, 0.0f, 12, 12);
+	_munchiePosition = new Vector2(250.0f, 250.0f);
+	
 
 	// Load menu
 	_menuBackground = new Texture2D();
@@ -73,9 +75,6 @@ void Pacman::Update(int elapsedTime)
 
 		if (!_paused)
 		{
-			// Adds to the frame accumulator in ::Draw() to manage time-synched behaviours
-			_frameCount++; 
-
 			// Controls the player's movement by taking an "enum" for movement states
 			if (keyboardState->IsKeyDown(Input::Keys::D))
 				movementState = 1;
@@ -119,14 +118,34 @@ void Pacman::Update(int elapsedTime)
 				_pacmanPosition->Y = Graphics::GetViewportHeight() + _pacmanSourceRect->Width;
 
 			// Controls other Pacman collision
-			if (Collision(_munchieRect)) {
+			if (Collision(_munchiePosition, _munchieRect)) {
 				delete _munchieRect;
+				delete _munchiePosition;
 				Score += 100;
 			}
-
-			if (_frameCount >= 60)
-				_frameCount = 0;
 		}
+	}
+	_pacmanCurrentFrameTime += elapsedTime;
+
+	if (_pacmanCurrentFrameTime > _cPacmanFrameTime)
+	{
+		_pacmanFrame++;
+
+		if (_pacmanFrame >= 3)
+			_pacmanFrame = 0;
+
+		_pacmanCurrentFrameTime = 0;
+	}
+
+	_munchieCurrentFrameTime += elapsedTime;
+
+	if (_munchieCurrentFrameTime > _cMunchieFrameTime) {
+		_munchieFrameCount++;
+
+		if (_munchieFrameCount >= 2)
+			_munchieFrameCount = 0;
+
+		_munchieCurrentFrameTime = 0;
 	}
 }
 
@@ -138,28 +157,10 @@ void Pacman::Draw(int elapsedTime)
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 	SpriteBatch::Draw(_pacmanTexture, _pacmanPosition, _pacmanSourceRect); // Draws Pacman
+	SpriteBatch::Draw(_munchieBlueTexture, _munchiePosition, _munchieRect);
 
-	if (_frameCount < 30)
-	{
-		// Draws Red Munchie
-		SpriteBatch::Draw(_munchieInvertedTexture, _munchieRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
-		_pacmanSourceRect->X = 0;
-	}
-	else
-	{
-		// Draw Blue Munchie
-		SpriteBatch::Draw(_munchieBlueTexture, _munchieRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
-		_pacmanSourceRect->X = 32;
-	}
-
-	if (_frameCount < 15)
-		_pacmanSourceRect->X = 0;
-	else if (_frameCount < 30)
-		_pacmanSourceRect->X = 32;
-	else if (_frameCount < 45)
-		_pacmanSourceRect->X = 64;
-	else if (_frameCount < 60)
-		_pacmanSourceRect->X = 32;
+	_munchieRect->X = _munchieRect->Width * _munchieFrameCount;
+	_pacmanSourceRect->X = _pacmanSourceRect->Width * _pacmanFrame;
 	
 	// Draws String
 	SpriteBatch::DrawString(stream.str().c_str(), _stringPosition, Color::White);
@@ -185,11 +186,11 @@ void Pacman::Draw(int elapsedTime)
 	SpriteBatch::EndDraw(); // Ends Drawing
 }
 
-bool Pacman::Collision(Rect* Actor) {
+bool Pacman::Collision(Vector2* Actor, Rect* ActorRect) {
 	if (_pacmanPosition->X + _pacmanSourceRect->Width > Actor->X
-		&& _pacmanPosition->X < Actor->X + Actor->Width
+		&& _pacmanPosition->X < Actor->X + ActorRect->Width
 		&& _pacmanPosition->Y + _pacmanSourceRect->Height > Actor->Y
-		&& _pacmanPosition->Y < Actor->Y + Actor->Height)
+		&& _pacmanPosition->Y < Actor->Y + ActorRect->Height)
 	{
 		return true;
 	}

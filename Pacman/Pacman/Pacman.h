@@ -23,12 +23,13 @@ private:
 	// Data to represent Pacman
 	Vector2* _pacmanPosition;
 	Rect* _pacmanSourceRect;
+	Vector2* _munchiePosition;
 	Texture2D* _pacmanTexture;
 	const float _cPacmanSpeed;
 	int Score;
 
 	// Data to represent Munchie
-	int _frameCount;
+	int _munchieFrameCount;
 	Rect* _munchieRect;
 	Texture2D* _munchieBlueTexture;
 	Texture2D* _munchieInvertedTexture;
@@ -38,6 +39,9 @@ private:
 
 	// Enum for types of movement
 	int movementState;
+	int _pacmanCurrentFrameTime;
+	int _cPacmanFrameTime;
+	int _pacmanFrame;
 
 	// Data for Menu
 	Texture2D* _menuBackground; 
@@ -47,6 +51,10 @@ private:
 	bool _pKeyDown;
 	bool gameStarted;
 
+	//Munchiessssssssss
+	const int _cMunchieFrameTime;
+	int _munchieFrame;
+	int _munchieCurrentFrameTime;
 public:
 	/// <summary> Constructs the Pacman class. </summary>
 	Pacman(int argc, char* argv[]);
@@ -63,5 +71,5 @@ public:
 	/// <summary> Called every frame - draw game here. </summary>
 	void virtual Draw(int elapsedTime);
 
-	bool virtual Collision(Rect* Actor);
+	bool virtual Collision(Vector2* Actor, Rect* ActorRect);
 };
