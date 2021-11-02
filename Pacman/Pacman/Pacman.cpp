@@ -2,7 +2,8 @@
 #include <iostream>
 #include <sstream>
 
-Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.20f), _pKeyDown(false), gameStarted(false), _cPacmanFrameTime(250), _cMunchieFrameTime(250)
+Pacman::Pacman(int argc, char* argv[]) 
+	: Game(argc, argv), _cPacmanSpeed(0.20f), _pKeyDown(false), gameStarted(false), _cPacmanFrameTime(250), _cMunchieFrameTime(250), _ccherryFrameTime(250)
 {
 	_munchieFrameCount = 0;
 	_pacmanCurrentFrameTime = 0;
@@ -42,6 +43,11 @@ void Pacman::LoadContent()
 	_munchieRect = new Rect(0.0f, 0.0f, 12, 12);
 	_munchiePosition = new Vector2(250.0f, 250.0f);
 	
+	// Load Cherry
+	_cherryTexture = new Texture2D();
+	_cherryTexture->Load("Textures/Cherry.png", true);
+	_cherryRect = new Rect(0.0f, 0.0f, 32, 32);
+	_cherryPosition = new Vector2(500.0f, 250.0f);
 
 	// Load menu
 	_menuBackground = new Texture2D();
@@ -71,6 +77,7 @@ void Pacman::Update(int elapsedTime)
 			CheckViewportCollision();
 			UpdatePacman(elapsedTime);
 			UpdateMunchie(elapsedTime);
+			UpdateCherry(elapsedTime);
 		}
 	}
 }
@@ -84,9 +91,11 @@ void Pacman::Draw(int elapsedTime)
 	SpriteBatch::BeginDraw(); // Starts Drawing
 	SpriteBatch::Draw(_pacmanTexture, _pacmanPosition, _pacmanSourceRect); // Draws Pacman
 	SpriteBatch::Draw(_munchieBlueTexture, _munchiePosition, _munchieRect);
+	SpriteBatch::Draw(_cherryTexture, _cherryPosition, _cherryRect);
 
 	_munchieRect->X = _munchieRect->Width * _munchieFrameCount;
 	_pacmanSourceRect->X = _pacmanSourceRect->Width * _pacmanFrame;
+	_cherryRect->X = _cherryRect->Width * _cherryFrameCount;
 	
 	// Draws String
 	SpriteBatch::DrawString(stream.str().c_str(), _stringPosition, Color::White);
@@ -137,19 +146,19 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state) {
 	switch (movementState) {
 	case 1:
 		_pacmanPosition->X += _cPacmanSpeed * elapsedTime;
-		_pacmanSourceRect->Y = -1;
+		_pacmanSourceRect->Y = 0;
 		break;
 	case 2:
 		_pacmanPosition->X -= _cPacmanSpeed * elapsedTime;
-		_pacmanSourceRect->Y = 63;
+		_pacmanSourceRect->Y = 64;
 		break;
 	case 3:
 		_pacmanPosition->Y -= _cPacmanSpeed * elapsedTime;
-		_pacmanSourceRect->Y = 95;
+		_pacmanSourceRect->Y = 96;
 		break;
 	case 4:
 		_pacmanPosition->Y += _cPacmanSpeed * elapsedTime;
-		_pacmanSourceRect->Y = 31;
+		_pacmanSourceRect->Y = 32;
 		break;
 	}
 };
@@ -193,13 +202,18 @@ void Pacman::UpdatePacman(int elapsedTime) {
 
 		_pacmanCurrentFrameTime = 0;
 	}
-	_munchieCurrentFrameTime += elapsedTime;
 
 	// Controls other Pacman collision
 	if (Collision(_munchiePosition, _munchieRect)) {
 		delete _munchieRect;
 		delete _munchiePosition;
 		Score += 100;
+	}
+
+	if (Collision(_cherryPosition, _cherryRect)) {
+		delete _cherryRect;
+		delete _cherryPosition;
+		Score += 250;
 	}
 }
 
@@ -212,4 +226,17 @@ void Pacman::UpdateMunchie(int elapsedTime) {
 
 		_munchieCurrentFrameTime = 0;
 	}
+	_munchieCurrentFrameTime += elapsedTime;
+}
+
+void Pacman::UpdateCherry(int elapsedTime) {
+	if (_cherryCurrentFrameTime > _ccherryFrameTime) {
+		_cherryFrameCount++;
+
+		if (_cherryFrameCount >= 2)
+			_cherryFrameCount = 0;
+
+		_cherryCurrentFrameTime = 0;
+	}
+	_cherryCurrentFrameTime += elapsedTime;
 }
