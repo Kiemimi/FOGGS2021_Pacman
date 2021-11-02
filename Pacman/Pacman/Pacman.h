@@ -20,6 +20,17 @@ using namespace S2D;
 class Pacman : public Game
 {
 private:
+	// Input Methods
+	void Input(int elapsedTime, Input::KeyboardState* state);
+
+	// Check Methods
+	void CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey);
+	void CheckViewportCollision();
+
+	// Update Methods
+	void UpdatePacman(int elapsedTime);
+	void UpdateMunchie(int elapsedTime);
+
 	// Data to represent Pacman
 	Vector2* _pacmanPosition;
 	Rect* _pacmanSourceRect;

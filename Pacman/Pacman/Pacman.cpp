@@ -61,91 +61,17 @@ void Pacman::Update(int elapsedTime)
 	// Creates the condition for exiting the start menu
 	if (keyboardState->IsKeyDown(Input::Keys::SPACE) && !gameStarted) {
 		gameStarted = true;
-	}
-
-	if (gameStarted)
+	}	
+	else
 	{
-		// Handles pausing, stops the game loop running while true
-		if (keyboardState->IsKeyDown(Input::Keys::P) && !_pKeyDown) {
-			_pKeyDown = true;
-			_paused = !_paused;
-		}
-		if (keyboardState->IsKeyUp(Input::Keys::P))
-			_pKeyDown = false;
-
 		if (!_paused)
 		{
-			// Controls the player's movement by taking an "enum" for movement states
-			if (keyboardState->IsKeyDown(Input::Keys::D))
-				movementState = 1;
-			if (keyboardState->IsKeyDown(Input::Keys::A))
-				movementState = 2;
-			if (keyboardState->IsKeyDown(Input::Keys::W))
-				movementState = 3;
-			if (keyboardState->IsKeyDown(Input::Keys::S))
-				movementState = 4;
-
-			switch (movementState) {
-			case 1:
-				_pacmanPosition->X += _cPacmanSpeed * elapsedTime;
-				_pacmanSourceRect->Y = 0;
-				break;
-			case 2:
-				_pacmanPosition->X -= _cPacmanSpeed * elapsedTime;
-				_pacmanSourceRect->Y = 64;
-				break;
-			case 3:
-				_pacmanPosition->Y -= _cPacmanSpeed * elapsedTime;
-				_pacmanSourceRect->Y = 96;
-				break;
-			case 4:
-				_pacmanPosition->Y += _cPacmanSpeed * elapsedTime;
-				_pacmanSourceRect->Y = 32;
-				break;
-			}
-
-			// Controls Pacman's screen wrapping, teleporting him to the other end of the screen if he reaches the end of the viewport
-			if (_pacmanPosition->X > Graphics::GetViewportWidth() + _pacmanSourceRect->Width)
-				_pacmanPosition->X = 0 - _pacmanSourceRect->Width;
-
-			if (_pacmanPosition->X < 0 - _pacmanSourceRect->Width)
-				_pacmanPosition->X = Graphics::GetViewportWidth() + _pacmanSourceRect->Width;
-
-			if (_pacmanPosition->Y > Graphics::GetViewportHeight() + _pacmanSourceRect->Width)
-				_pacmanPosition->Y = 0 - _pacmanSourceRect->Width;
-
-			if (_pacmanPosition->Y < 0 - _pacmanSourceRect->Width)
-				_pacmanPosition->Y = Graphics::GetViewportHeight() + _pacmanSourceRect->Width;
-
-			// Controls other Pacman collision
-			if (Collision(_munchiePosition, _munchieRect)) {
-				delete _munchieRect;
-				delete _munchiePosition;
-				Score += 100;
-			}
+			Input(elapsedTime, keyboardState);
+			CheckPaused(keyboardState, Input::Keys::P);
+			CheckViewportCollision();
+			UpdatePacman(elapsedTime);
+			UpdateMunchie(elapsedTime);
 		}
-	}
-	_pacmanCurrentFrameTime += elapsedTime;
-
-	if (_pacmanCurrentFrameTime > _cPacmanFrameTime)
-	{
-		_pacmanFrame++;
-
-		if (_pacmanFrame >= 3)
-			_pacmanFrame = 0;
-
-		_pacmanCurrentFrameTime = 0;
-	}
-
-	_munchieCurrentFrameTime += elapsedTime;
-
-	if (_munchieCurrentFrameTime > _cMunchieFrameTime) {
-		_munchieFrameCount++;
-
-		if (_munchieFrameCount >= 2)
-			_munchieFrameCount = 0;
-
-		_munchieCurrentFrameTime = 0;
 	}
 }
 
@@ -196,3 +122,95 @@ bool Pacman::Collision(Vector2* Actor, Rect* ActorRect) {
 	}
 	else return false;
 }
+
+void Pacman::Input(int elapsedTime, Input::KeyboardState* state) {
+	// Controls the player's movement by taking an "enum" for movement states
+	if (state->IsKeyDown(Input::Keys::D))
+		movementState = 1;
+	if (state->IsKeyDown(Input::Keys::A))
+		movementState = 2;
+	if (state->IsKeyDown(Input::Keys::W))
+		movementState = 3;
+	if (state->IsKeyDown(Input::Keys::S))
+		movementState = 4;
+
+	switch (movementState) {
+	case 1:
+		_pacmanPosition->X += _cPacmanSpeed * elapsedTime;
+		_pacmanSourceRect->Y = -1;
+		break;
+	case 2:
+		_pacmanPosition->X -= _cPacmanSpeed * elapsedTime;
+		_pacmanSourceRect->Y = 63;
+		break;
+	case 3:
+		_pacmanPosition->Y -= _cPacmanSpeed * elapsedTime;
+		_pacmanSourceRect->Y = 95;
+		break;
+	case 4:
+		_pacmanPosition->Y += _cPacmanSpeed * elapsedTime;
+		_pacmanSourceRect->Y = 31;
+		break;
+	}
+};
+
+void Pacman::CheckViewportCollision()
+{
+	// Controls Pacman's screen wrapping, teleporting him to the other end of the screen if he reaches the end of the viewport
+
+	if (_pacmanPosition->X > Graphics::GetViewportWidth() + _pacmanSourceRect->Width)
+		_pacmanPosition->X = 0 - _pacmanSourceRect->Width;
+
+	if (_pacmanPosition->X < 0 - _pacmanSourceRect->Width)
+		_pacmanPosition->X = Graphics::GetViewportWidth() + _pacmanSourceRect->Width;
+
+	if (_pacmanPosition->Y > Graphics::GetViewportHeight() + _pacmanSourceRect->Width)
+		_pacmanPosition->Y = 0 - _pacmanSourceRect->Width;
+
+	if (_pacmanPosition->Y < 0 - _pacmanSourceRect->Width)
+		_pacmanPosition->Y = Graphics::GetViewportHeight() + _pacmanSourceRect->Width;
+}
+
+void Pacman::CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey) {
+	// Handles pausing, stops the game loop running while true
+
+	if (state->IsKeyDown(pauseKey) && !_pKeyDown) {
+		_pKeyDown = true;
+		_paused = !_paused;
+	}
+
+	if (state->IsKeyUp(pauseKey))
+		_pKeyDown = false;
+};
+
+void Pacman::UpdatePacman(int elapsedTime) {
+	_pacmanCurrentFrameTime += elapsedTime;
+	if (_pacmanCurrentFrameTime > _cPacmanFrameTime)
+	{
+		_pacmanFrame++;
+		if (_pacmanFrame >= 3)
+			_pacmanFrame = 0;
+
+		_pacmanCurrentFrameTime = 0;
+	}
+	_munchieCurrentFrameTime += elapsedTime;
+
+	// Controls other Pacman collision
+	if (Collision(_munchiePosition, _munchieRect)) {
+		delete _munchieRect;
+		delete _munchiePosition;
+		Score += 100;
+	}
+}
+
+void Pacman::UpdateMunchie(int elapsedTime) {
+	if (_munchieCurrentFrameTime > _cMunchieFrameTime) {
+		_munchieFrameCount++;
+
+		if (_munchieFrameCount >= 2)
+			_munchieFrameCount = 0;
+
+		_munchieCurrentFrameTime = 0;
+	}
+}
+
