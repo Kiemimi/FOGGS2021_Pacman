@@ -213,4 +213,3 @@ void Pacman::UpdateMunchie(int elapsedTime) {
 		_munchieCurrentFrameTime = 0;
 	}
 }
-
