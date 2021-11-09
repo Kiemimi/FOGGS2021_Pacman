@@ -14,12 +14,38 @@
 // Reduces the amount of typing by including all classes in S2D namespace
 using namespace S2D;
 
-// Declares the Pacman class which inherits from the Game class.
-// This allows us to overload the Game class methods to help us
-// load content, draw and update our game.
+struct Player
+{
+	// Data to represent Pacman
+	Vector2*	_Position;
+	Rect*		_sourceRect;
+	Texture2D*  _Texture;
+	int			_Score;
+	int			_movementState;
+	int			_currentFrameTime;
+	int			_Frame;
+	bool		_pKeyDown;
+};
+
+struct Enemy
+{
+	// Data to represent Munchie
+	int			_frameCount;
+	Rect*		_Rect;
+	Vector2*	_Position;
+	Texture2D*	_Texture;
+	int			_Frame;
+	int			_currentFrameTime;
+};
+
 class Pacman : public Game
 {
 private:
+
+	Player* _pacman;
+	Enemy*  _munchie;
+	Enemy* _cherry;
+
 	// Input Methods
 	void Input(int elapsedTime, Input::KeyboardState* state);
 
@@ -32,48 +58,22 @@ private:
 	void UpdateMunchie(int elapsedTime);
 	void UpdateCherry(int elapsedTime);
 
-	// Data to represent Pacman
-	Vector2*	_pacmanPosition;
-	Rect*		_pacmanSourceRect;
-	Texture2D*	_pacmanTexture;
-	const float _cPacmanSpeed;
-	int			Score;
-
-	// Data to represent Munchie
-	int			_munchieFrameCount;
-	Rect*		_munchieRect;
-	Vector2*	_munchiePosition;
-	Texture2D*	_munchieBlueTexture;
+	// Pacman data
+	const float _cSpeed;
+	const int	_cPacmanFrameTime;
 	const int	_cMunchieFrameTime;
-	int			_munchieFrame;
-	int			_munchieCurrentFrameTime;
-
-	// Data to represent Cherry
-	int			_cherryFrameCount;
-	Rect*		_cherryRect;
-	Vector2*	_cherryPosition;
-	Texture2D*	_cherryTexture;
-	const int	_ccherryFrameTime;
-	int			_cherryFrame;
-	int			_cherryCurrentFrameTime;
+	const int	_cCherryFrameTime;
 
 	// Position for String
 	Vector2*	_stringPosition;
-
-	// Enum for types of movement
-	int			movementState;
-	int			_pacmanCurrentFrameTime;
-	int			_cPacmanFrameTime;
-	int			_pacmanFrame;
 
 	// Data for Menu
 	Texture2D*	_menuBackground; 
 	Rect*		_menuRectangle; 
 	Vector2*	_menuStringPosition; 
-	bool		_paused;
-	bool		_pKeyDown;
 	bool		gameStarted;
-	
+	bool		_paused;
+
 public:
 	/// <summary> Constructs the Pacman class. </summary>
 	Pacman(int argc, char* argv[]);
@@ -90,5 +90,6 @@ public:
 	/// <summary> Called every frame - draw game here. </summary>
 	void virtual Draw(int elapsedTime);
 
+	/// <summary> Takes collision with munchies </summary>
 	bool virtual Collision(Vector2* Actor, Rect* ActorRect);
 };
