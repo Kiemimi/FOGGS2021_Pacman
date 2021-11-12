@@ -1,4 +1,5 @@
 #pragma once
+#define MUNCHIECOUNT 50
 
 // If Windows and not in Debug, this will run without a console window
 // You can use this to output information when debugging using cout or cerr
@@ -43,7 +44,7 @@ class Pacman : public Game
 private:
 
 	Player* _pacman;
-	Enemy*  _munchie;
+	Enemy* _munchie[MUNCHIECOUNT];
 	Enemy* _cherry;
 
 	// Input Methods

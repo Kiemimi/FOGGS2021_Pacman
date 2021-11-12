@@ -6,7 +6,15 @@ Pacman::Pacman(int argc, char* argv[])
 	: Game(argc, argv), _pacman(), _munchie(), gameStarted(false), _cSpeed(0.25f), _cPacmanFrameTime(250), _cMunchieFrameTime(250), _cCherryFrameTime(500)
 {
 	_pacman  = new Player();
-	_munchie = new Enemy();
+	
+	int i;
+
+	for (i = 0; i < MUNCHIECOUNT; i++) {
+		_munchie[i] = new Enemy();
+		_munchie[i]->_currentFrameTime = 0;
+		_munchie[i]->_frameCount = 0;
+	}
+
 	_cherry	 = new Enemy();
 
 	_pacman->_currentFrameTime = 0;
@@ -16,9 +24,6 @@ Pacman::Pacman(int argc, char* argv[])
 	_pacman->_pKeyDown = false;
 	
 	_paused = false;
-
-	_munchie->_currentFrameTime = 0;
-	_munchie->_frameCount = 0;
 
 	//Initialise important Game aspects
 	Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Pacman", 60);
@@ -35,9 +40,15 @@ Pacman::~Pacman()
 	delete _pacman->_Position;
 	delete _pacman;
 
-	delete _munchie->_Texture;
-	delete _munchie->_Rect;
-
+	for (int i = 0; i < MUNCHIECOUNT; i++) {
+		delete _munchie[i]->_Texture;
+		delete _munchie[i]->_Rect;
+		delete _munchie[i];
+	}
+	
+	delete _cherry->_Texture;
+	delete _cherry->_Rect;
+	delete _cherry;
 }
 
 void Pacman::LoadContent()
@@ -49,10 +60,12 @@ void Pacman::LoadContent()
 	_pacman->_sourceRect = new Rect(350.0f, 350.0f, 32, 32);
 
 	// Load Munchie
-	_munchie->_Texture = new Texture2D();
-	_munchie->_Texture->Load("Textures/Munchie.png", true);
-	_munchie->_Rect = new Rect(0.0f, 0.0f, 12, 12);
-	_munchie->_Position = new Vector2(250.0f, 250.0f);
+	for (int i = 0; i < MUNCHIECOUNT; i++) {
+		_munchie[i]->_Texture = new Texture2D();
+		_munchie[i]->_Texture->Load("Textures/Munchie.png", true);
+		_munchie[i]->_Rect = new Rect(0.0f, 0.0f, 12, 12);
+		_munchie[i]->_Position = new Vector2(rand() % Graphics::GetViewportWidth(), (rand() % Graphics::GetViewportHeight()));
+	}
 	
 	// Load Cherry
 	_cherry->_Texture = new Texture2D();
@@ -101,10 +114,14 @@ void Pacman::Draw(int elapsedTime)
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 	SpriteBatch::Draw(_pacman->_Texture, _pacman->_Position, _pacman->_sourceRect); // Draws Pacman
-	SpriteBatch::Draw(_munchie->_Texture, _munchie->_Position, _munchie->_Rect);
+
+	for (int i = 0; i < MUNCHIECOUNT; i++) {
+		SpriteBatch::Draw(_munchie[i]->_Texture, _munchie[i]->_Position, _munchie[i]->_Rect);
+		_munchie[i]->_Rect->X = _munchie[i]->_Rect->Width * _munchie[i]->_frameCount;
+	}
+
 	SpriteBatch::Draw(_cherry->_Texture, _cherry->_Position, _cherry->_Rect);
 
-	_munchie->_Rect->X = _munchie->_Rect->Width * _munchie->_frameCount;
 	_pacman->_sourceRect->X = _pacman->_sourceRect->Width * _pacman->_Frame;
 	_cherry->_Rect->X = _cherry->_Rect->Width * _cherry->_frameCount;
 	
@@ -215,10 +232,12 @@ void Pacman::UpdatePacman(int elapsedTime) {
 	}
 
 	// Controls other Pacman collision
-	if (Collision(_munchie->_Position, _munchie->_Rect)) {
-		delete _munchie->_Rect;
-		delete _munchie->_Position;
-		_pacman->_Score += 100;
+	for (int i = 0; i < MUNCHIECOUNT; i++) {
+		if (Collision(_munchie[i]->_Position, _munchie[i]->_Rect)) {
+			delete _munchie[i]->_Rect;
+			delete _munchie[i]->_Position;
+			_pacman->_Score += 100;
+		}
 	}
 
 	if (Collision(_cherry->_Position, _cherry->_Rect)) {
@@ -229,15 +248,17 @@ void Pacman::UpdatePacman(int elapsedTime) {
 }
 
 void Pacman::UpdateMunchie(int elapsedTime) {
-	if (_munchie->_currentFrameTime > _cMunchieFrameTime) {
-		_munchie->_frameCount++;
+	for (int i = 0; i < MUNCHIECOUNT; i++) {
+		if (_munchie[i]->_currentFrameTime > _cMunchieFrameTime) {
+			_munchie[i]->_frameCount++;
 
-		if (_munchie->_frameCount >= 2)
-			_munchie->_frameCount = 0;
+			if (_munchie[i]->_frameCount >= 2)
+				_munchie[i]->_frameCount = 0;
 
-		_munchie->_currentFrameTime = 0;
+			_munchie[i]->_currentFrameTime = 0;
+		}
+		_munchie[i]->_currentFrameTime += elapsedTime;
 	}
-	_munchie->_currentFrameTime += elapsedTime;
 }
 
 void Pacman::UpdateCherry(int elapsedTime) {
