@@ -56,7 +56,7 @@ private:
 
 	// Update Methods
 	void UpdatePacman(int elapsedTime);
-	void UpdateMunchie(int elapsedTime);
+	void UpdateMunchie(Enemy*, int elapsedTime);
 	void UpdateCherry(int elapsedTime);
 
 	// Pacman data

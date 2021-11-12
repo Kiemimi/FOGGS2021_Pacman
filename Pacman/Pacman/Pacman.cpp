@@ -3,7 +3,7 @@
 #include <sstream>
 
 Pacman::Pacman(int argc, char* argv[])
-	: Game(argc, argv), _pacman(), _munchie(), gameStarted(false), _cSpeed(0.25f), _cPacmanFrameTime(250), _cMunchieFrameTime(250), _cCherryFrameTime(500)
+	: Game(argc, argv), _pacman(), _munchie(), gameStarted(false), _cSpeed(0.25f), _cPacmanFrameTime(250), _cMunchieFrameTime(25000), _cCherryFrameTime(500)
 {
 	_pacman  = new Player();
 	
@@ -12,7 +12,7 @@ Pacman::Pacman(int argc, char* argv[])
 	for (i = 0; i < MUNCHIECOUNT; i++) {
 		_munchie[i] = new Enemy();
 		_munchie[i]->_currentFrameTime = 0;
-		_munchie[i]->_frameCount = 0;
+		_munchie[i]->_Frame = 0;
 	}
 
 	_cherry	 = new Enemy();
@@ -46,6 +46,7 @@ Pacman::~Pacman()
 		delete _munchie[i];
 	}
 	
+	delete[] _munchie;
 	delete _cherry->_Texture;
 	delete _cherry->_Rect;
 	delete _cherry;
@@ -59,10 +60,12 @@ void Pacman::LoadContent()
 	_pacman->_Position = new Vector2(350.0f, 350.0f);
 	_pacman->_sourceRect = new Rect(350.0f, 350.0f, 32, 32);
 
+	Texture2D* munchieTex = new Texture2D();
+	munchieTex->Load("Textures/Munchie.png", false);
+
 	// Load Munchie
 	for (int i = 0; i < MUNCHIECOUNT; i++) {
-		_munchie[i]->_Texture = new Texture2D();
-		_munchie[i]->_Texture->Load("Textures/Munchie.png", true);
+		_munchie[i]->_Texture = munchieTex;
 		_munchie[i]->_Rect = new Rect(0.0f, 0.0f, 12, 12);
 		_munchie[i]->_Position = new Vector2(rand() % Graphics::GetViewportWidth(), (rand() % Graphics::GetViewportHeight()));
 	}
@@ -97,12 +100,17 @@ void Pacman::Update(int elapsedTime)
 		if (!_paused)
 		{
 			Input(elapsedTime, keyboardState);
-			CheckPaused(keyboardState, Input::Keys::P);
 			CheckViewportCollision();
 			UpdatePacman(elapsedTime);
-			UpdateMunchie(elapsedTime);
+
+			for (int i = 0; i < MUNCHIECOUNT; i++) {
+				UpdateMunchie(_munchie[i], elapsedTime);
+			}
+
 			UpdateCherry(elapsedTime);
 		}
+
+		CheckPaused(keyboardState, Input::Keys::P);
 	}
 }
 
@@ -247,7 +255,7 @@ void Pacman::UpdatePacman(int elapsedTime) {
 	}
 }
 
-void Pacman::UpdateMunchie(int elapsedTime) {
+void Pacman::UpdateMunchie(Enemy*, int elapsedTime) {
 	for (int i = 0; i < MUNCHIECOUNT; i++) {
 		if (_munchie[i]->_currentFrameTime > _cMunchieFrameTime) {
 			_munchie[i]->_frameCount++;
