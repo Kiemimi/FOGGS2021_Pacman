@@ -199,8 +199,6 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state) {
 	}
 };
 
-s
-
 void Pacman::CheckViewportCollision()
 {
 	// Controls Pacman's screen wrapping, teleporting him to the other end of the screen if he reaches the end of the viewport
