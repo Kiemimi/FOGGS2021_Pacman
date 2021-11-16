@@ -182,6 +182,10 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 			_pacman->_movementState = 3;
 		if (state->IsKeyDown(Input::Keys::S))
 			_pacman->_movementState = 4;
+		if (state->IsKeyDown(Input::Keys::R)) {
+			_cherry->_Position->X = rand() % Graphics::GetViewportWidth() - 64;
+			_cherry->_Position->Y = rand() % Graphics::GetViewportWidth() - 64;
+		}
 		state->IsKeyDown(Input::Keys::LEFTSHIFT) ? _pacman->_speedMultiplier = 2.25f : _pacman->_speedMultiplier = 1.0f;
 	#pragma endregion
 	#pragma region MouseInputHandler
