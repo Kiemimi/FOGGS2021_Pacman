@@ -48,7 +48,7 @@ private:
 	Enemy* _cherry;
 
 	// Input Methods
-	void Input(int elapsedTime, Input::KeyboardState* state);
+	void Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
 
 	// Check Methods
 	void CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey);
