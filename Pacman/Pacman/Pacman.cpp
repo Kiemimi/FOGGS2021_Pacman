@@ -97,7 +97,7 @@ void Pacman::Update(int elapsedTime)
 	}	
 	else
 	{
-		if (!_paused)
+		if (!_paused && gameStarted)
 		{
 			Input(elapsedTime, keyboardState);
 			CheckViewportCollision();
@@ -106,10 +106,8 @@ void Pacman::Update(int elapsedTime)
 			for (int i = 0; i < MUNCHIECOUNT; i++) {
 				UpdateMunchie(_munchie[i], elapsedTime);
 			}
-
 			UpdateCherry(elapsedTime);
 		}
-
 		CheckPaused(keyboardState, Input::Keys::P);
 	}
 }
