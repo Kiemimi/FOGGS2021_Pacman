@@ -190,19 +190,19 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 	#pragma endregion
 	switch (_pacman->_movementState) {
 	case 1:
-		_pacman->_Position->X += _cSpeed * elapsedTime;
+		_pacman->_Position->X += _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 		_pacman->_sourceRect->Y = 0;
 		break;
 	case 2:
-		_pacman->_Position->X -= _cSpeed * elapsedTime;
+		_pacman->_Position->X -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 		_pacman->_sourceRect->Y = 64;
 		break;
 	case 3:
-		_pacman->_Position->Y -= _cSpeed * elapsedTime;
+		_pacman->_Position->Y -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 		_pacman->_sourceRect->Y = 96;
 		break;
 	case 4:
-		_pacman->_Position->Y += _cSpeed * elapsedTime;
+		_pacman->_Position->Y += _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 		_pacman->_sourceRect->Y = 32;
 		break;
 	}

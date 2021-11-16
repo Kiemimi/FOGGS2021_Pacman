@@ -25,6 +25,7 @@ struct Player
 	int			_movementState;
 	int			_currentFrameTime;
 	int			_Frame;
+	float		_speedMultiplier;
 	bool		_pKeyDown;
 };
 
