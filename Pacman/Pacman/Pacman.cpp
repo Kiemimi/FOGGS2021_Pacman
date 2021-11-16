@@ -170,6 +170,8 @@ bool Pacman::Collision(Vector2* Actor, Rect* ActorRect) {
 }
 
 void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState) {
+	float pacmanSpeed = _cSpeed * elapsedTime * _pacman->_speedMultiplier;
+
 	// Controls the player's movement by taking an "enum" for movement states
 	#pragma region KeyboardInputHandler
 		if (state->IsKeyDown(Input::Keys::D))
@@ -180,6 +182,7 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 			_pacman->_movementState = 3;
 		if (state->IsKeyDown(Input::Keys::S))
 			_pacman->_movementState = 4;
+		state->IsKeyDown(Input::Keys::LEFTSHIFT) ? _pacman->_speedMultiplier = 2.25f : _pacman->_speedMultiplier = 1.0f;
 	#pragma endregion
 	#pragma region MouseInputHandler
 		if (mouseState->LeftButton == Input::ButtonState::PRESSED)
@@ -190,19 +193,19 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 	#pragma endregion
 	switch (_pacman->_movementState) {
 	case 1:
-		_pacman->_Position->X += _cSpeed * elapsedTime * _pacman->_speedMultiplier;
+		_pacman->_Position->X += pacmanSpeed;
 		_pacman->_sourceRect->Y = 0;
 		break;
 	case 2:
-		_pacman->_Position->X -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
+		_pacman->_Position->X -= pacmanSpeed;
 		_pacman->_sourceRect->Y = 64;
 		break;
 	case 3:
-		_pacman->_Position->Y -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
+		_pacman->_Position->Y -= pacmanSpeed;
 		_pacman->_sourceRect->Y = 96;
 		break;
 	case 4:
-		_pacman->_Position->Y += _cSpeed * elapsedTime * _pacman->_speedMultiplier;
+		_pacman->_Position->Y += pacmanSpeed;
 		_pacman->_sourceRect->Y = 32;
 		break;
 	}
