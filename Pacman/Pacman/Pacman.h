@@ -25,6 +25,7 @@ struct Player
 	int			_movementState;
 	int			_currentFrameTime;
 	int			_Frame;
+	float		_speedMultiplier;
 	bool		_pKeyDown;
 };
 
@@ -48,7 +49,7 @@ private:
 	Enemy* _cherry;
 
 	// Input Methods
-	void Input(int elapsedTime, Input::KeyboardState* state);
+	void Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
 
 	// Check Methods
 	void CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey);

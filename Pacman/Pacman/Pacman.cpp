@@ -90,6 +90,7 @@ void Pacman::Update(int elapsedTime)
 {
 	// Initialises keyboard input
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
+	Input::MouseState* mouseState = Input::Mouse::GetState();
 
 	// Creates the condition for exiting the start menu
 	if (keyboardState->IsKeyDown(Input::Keys::SPACE) && !gameStarted) {
@@ -99,7 +100,7 @@ void Pacman::Update(int elapsedTime)
 	{
 		if (!_paused && gameStarted)
 		{
-			Input(elapsedTime, keyboardState);
+			Input(elapsedTime, keyboardState, mouseState);
 			CheckViewportCollision();
 			UpdatePacman(elapsedTime);
 
@@ -166,32 +167,47 @@ bool Pacman::Collision(Vector2* Actor, Rect* ActorRect) {
 	else return false;
 }
 
-void Pacman::Input(int elapsedTime, Input::KeyboardState* state) {
-	// Controls the player's movement by taking an "enum" for movement states
-	if (state->IsKeyDown(Input::Keys::D))
-		_pacman->_movementState = 1;
-	if (state->IsKeyDown(Input::Keys::A))
-		_pacman->_movementState = 2;
-	if (state->IsKeyDown(Input::Keys::W))
-		_pacman->_movementState = 3;
-	if (state->IsKeyDown(Input::Keys::S))
-		_pacman->_movementState = 4;
+void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState) {
+	float pacmanSpeed = _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 
+	// Controls the player's movement by taking an "enum" for movement states
+	#pragma region KeyboardInputHandler
+		if (state->IsKeyDown(Input::Keys::D))
+			_pacman->_movementState = 1;
+		if (state->IsKeyDown(Input::Keys::A))
+			_pacman->_movementState = 2;
+		if (state->IsKeyDown(Input::Keys::W))
+			_pacman->_movementState = 3;
+		if (state->IsKeyDown(Input::Keys::S))
+			_pacman->_movementState = 4;
+		if (state->IsKeyDown(Input::Keys::R)) {
+			_cherry->_Position->X = rand() % Graphics::GetViewportWidth() - 64;
+			_cherry->_Position->Y = rand() % Graphics::GetViewportWidth() - 64;
+		}
+		state->IsKeyDown(Input::Keys::LEFTSHIFT) ? _pacman->_speedMultiplier = 2.25f : _pacman->_speedMultiplier = 1.0f;
+	#pragma endregion
+	#pragma region MouseInputHandler
+		if (mouseState->LeftButton == Input::ButtonState::PRESSED)
+		{
+			_cherry->_Position->X = mouseState->X;
+			_cherry->_Position->Y = mouseState->Y;
+		}
+	#pragma endregion
 	switch (_pacman->_movementState) {
 	case 1:
-		_pacman->_Position->X += _cSpeed * elapsedTime;
+		_pacman->_Position->X += pacmanSpeed;
 		_pacman->_sourceRect->Y = 0;
 		break;
 	case 2:
-		_pacman->_Position->X -= _cSpeed * elapsedTime;
+		_pacman->_Position->X -= pacmanSpeed;
 		_pacman->_sourceRect->Y = 64;
 		break;
 	case 3:
-		_pacman->_Position->Y -= _cSpeed * elapsedTime;
+		_pacman->_Position->Y -= pacmanSpeed;
 		_pacman->_sourceRect->Y = 96;
 		break;
 	case 4:
-		_pacman->_Position->Y += _cSpeed * elapsedTime;
+		_pacman->_Position->Y += pacmanSpeed;
 		_pacman->_sourceRect->Y = 32;
 		break;
 	}
@@ -200,7 +216,7 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state) {
 void Pacman::CheckViewportCollision()
 {
 	// Controls Pacman's screen wrapping, teleporting him to the other end of the screen if he reaches the end of the viewport
-
+	#pragma region ScreenWrapper
 	if (_pacman->_Position->X > Graphics::GetViewportWidth() + _pacman->_sourceRect->Width)
 		_pacman->_Position->X = 0 - _pacman->_sourceRect->Width;
 
@@ -212,6 +228,7 @@ void Pacman::CheckViewportCollision()
 
 	if (_pacman->_Position->Y < 0 - _pacman->_sourceRect->Width)
 		_pacman->_Position->Y = Graphics::GetViewportHeight() + _pacman->_sourceRect->Width;
+	#pragma endregion
 }
 
 void Pacman::CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey) {
