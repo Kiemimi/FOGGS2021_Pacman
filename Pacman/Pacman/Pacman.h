@@ -1,5 +1,6 @@
 #pragma once
 #define MUNCHIECOUNT 50
+#define GHOSTCOUNT 10
 
 // If Windows and not in Debug, this will run without a console window
 // You can use this to output information when debugging using cout or cerr
@@ -18,9 +19,10 @@ using namespace S2D;
 struct Player
 {
 	// Data to represent Pacman
+	bool		_Dead;
 	Vector2*	_Position;
 	Rect*		_sourceRect;
-	Texture2D*  _Texture;
+	Texture2D*	_Texture;
 	int			_Score;
 	int			_movementState;
 	int			_currentFrameTime;
@@ -40,6 +42,15 @@ struct Enemy
 	int			_currentFrameTime;
 };
 
+struct MovingEnemy {
+	// Data to represent Ghosts
+	Vector2*	_Position;
+	Texture2D*	_Texture;
+	Rect*		_sourceRect;
+	int			_Direction;
+	float		_Speed;
+};
+
 class Pacman : public Game
 {
 private:
@@ -47,6 +58,7 @@ private:
 	Player* _pacman;
 	Enemy* _munchie[MUNCHIECOUNT];
 	Enemy* _cherry;
+	MovingEnemy* _ghost[GHOSTCOUNT];
 
 	// Input Methods
 	void Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
@@ -59,6 +71,7 @@ private:
 	void UpdatePacman(int elapsedTime);
 	void UpdateMunchie(Enemy*, int elapsedTime);
 	void UpdateCherry(int elapsedTime);
+	void UpdateGhost(MovingEnemy*, int elapsedTime);
 
 	// Pacman data
 	const float _cSpeed;
