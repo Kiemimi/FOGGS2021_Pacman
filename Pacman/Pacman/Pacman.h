@@ -1,5 +1,5 @@
 #pragma once
-#define MUNCHIECOUNT 50
+#define MUNCHIECOUNT 200
 #define GHOSTCOUNT 10
 
 // If Windows and not in Debug, this will run without a console window
@@ -60,6 +60,8 @@ private:
 	Enemy* _cherry;
 	MovingEnemy* _ghost[GHOSTCOUNT];
 
+	SoundEffect* _pop;
+
 	// Input Methods
 	void Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
 
@@ -89,6 +91,8 @@ private:
 	bool		gameStarted;
 	bool		_paused;
 
+	bool		_selfCollision;
+
 public:
 	/// <summary> Constructs the Pacman class. </summary>
 	Pacman(int argc, char* argv[]);
@@ -106,5 +110,5 @@ public:
 	void virtual Draw(int elapsedTime);
 
 	/// <summary> Takes collision with munchies </summary>
-	bool virtual Collision(Vector2* Actor, Rect* ActorRect);
+	bool virtual Collision(Vector2* Actor, Rect* ActorRect, Vector2* Target, Rect* TargetRect);
 };

@@ -13,6 +13,8 @@ Pacman::Pacman(int argc, char* argv[])
 		_munchie[i]->_currentFrameTime = 0;
 		_munchie[i]->_Frame = 0;
 	}
+	
+	_selfCollision = false;
 
 	for (int i = 0; i < GHOSTCOUNT; i++) {
 		_ghost[i] = new MovingEnemy();
@@ -29,8 +31,10 @@ Pacman::Pacman(int argc, char* argv[])
 	_pacman->_pKeyDown = false;
 	
 	_paused = false;
+	_pop = new SoundEffect();
 
 	//Initialise important Game aspects
+	Audio::Initialise();
 	Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Pacman", 60);
 	Input::Initialise();
 
@@ -55,6 +59,7 @@ Pacman::~Pacman()
 	delete _cherry->_Texture;
 	delete _cherry->_Rect;
 	delete _cherry;
+	delete _pop;
 }
 
 void Pacman::LoadContent()
@@ -70,11 +75,14 @@ void Pacman::LoadContent()
 	Texture2D* ghostTex = new Texture2D();
 	ghostTex->Load("Textures/GhostBlue.png", true);
 
+	_pop->Load("Sounds/pop.wav");
+
 	// Load Munchie
 	for (int i = 0; i < MUNCHIECOUNT; i++) {
 		_munchie[i]->_Texture = munchieTex;
 		_munchie[i]->_Rect = new Rect(0.0f, 0.0f, 12, 12);
 		_munchie[i]->_Position = new Vector2(rand() % Graphics::GetViewportWidth(), (rand() % Graphics::GetViewportHeight()));
+
 	}
 	
 	// Load Cherry
@@ -138,9 +146,7 @@ void Pacman::Draw(int elapsedTime)
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 
-	if (!_pacman->_Dead) {
-		SpriteBatch::Draw(_pacman->_Texture, _pacman->_Position, _pacman->_sourceRect); // Draws Pacman
-	}
+	SpriteBatch::Draw(_pacman->_Texture, _pacman->_Position, _pacman->_sourceRect); // Draws Pacman
 
 	for (int i = 0; i < MUNCHIECOUNT; i++) {
 		SpriteBatch::Draw(_munchie[i]->_Texture, _munchie[i]->_Position, _munchie[i]->_Rect);
@@ -152,6 +158,7 @@ void Pacman::Draw(int elapsedTime)
 	}
 
 	_pacman->_sourceRect->X = _pacman->_sourceRect->Width * _pacman->_Frame;
+
 	SpriteBatch::Draw(_cherry->_Texture, _cherry->_Position, _cherry->_Rect);
 	_cherry->_Rect->X = _cherry->_Rect->Width * _cherry->_frameCount;
 	
@@ -179,11 +186,11 @@ void Pacman::Draw(int elapsedTime)
 	SpriteBatch::EndDraw(); // Ends Drawing
 }
 
-bool Pacman::Collision(Vector2* Actor, Rect* ActorRect) {
-	if (_pacman->_Position->X + _pacman->_sourceRect->Width > Actor->X
-		&& _pacman->_Position->X < Actor->X + ActorRect->Width
-		&& _pacman->_Position->Y + _pacman->_sourceRect->Height > Actor->Y
-		&& _pacman->_Position->Y < Actor->Y + ActorRect->Height)
+bool Pacman::Collision(Vector2* Actor, Rect* ActorRect, Vector2* Target, Rect* TargetRect) {
+	if (	Actor->X + ActorRect->Width > Target->X
+		&&	Actor->Y + ActorRect->Height > Target->Y
+		&&	Actor->X < Target->X + TargetRect->Width
+		&&	Actor->Y < Target->Y + TargetRect->Height)
 	{
 		return true;
 	}
@@ -194,7 +201,8 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 	float pacmanSpeed = _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 
 	// Controls the player's movement by taking an "enum" for movement states
-	#pragma region KeyboardInputHandler
+	if (!_pacman->_Dead) {
+#pragma region KeyboardInputHandler
 		if (state->IsKeyDown(Input::Keys::D))
 			_pacman->_movementState = 1;
 		if (state->IsKeyDown(Input::Keys::A))
@@ -208,31 +216,32 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 			_cherry->_Position->Y = rand() % Graphics::GetViewportWidth() - 64;
 		}
 		state->IsKeyDown(Input::Keys::LEFTSHIFT) ? _pacman->_speedMultiplier = 2.25f : _pacman->_speedMultiplier = 1.0f;
-	#pragma endregion
-	#pragma region MouseInputHandler
+#pragma endregion
+#pragma region MouseInputHandler
 		if (mouseState->LeftButton == Input::ButtonState::PRESSED)
 		{
 			_cherry->_Position->X = mouseState->X;
 			_cherry->_Position->Y = mouseState->Y;
 		}
-	#pragma endregion
-	switch (_pacman->_movementState) {
-	case 1:
-		_pacman->_Position->X += pacmanSpeed;
-		_pacman->_sourceRect->Y = 0;
-		break;
-	case 2:
-		_pacman->_Position->X -= pacmanSpeed;
-		_pacman->_sourceRect->Y = 64;
-		break;
-	case 3:
-		_pacman->_Position->Y -= pacmanSpeed;
-		_pacman->_sourceRect->Y = 96;
-		break;
-	case 4:
-		_pacman->_Position->Y += pacmanSpeed;
-		_pacman->_sourceRect->Y = 32;
-		break;
+#pragma endregion
+		switch (_pacman->_movementState) {
+		case 1:
+			_pacman->_Position->X += pacmanSpeed;
+			_pacman->_sourceRect->Y = 0;
+			break;
+		case 2:
+			_pacman->_Position->X -= pacmanSpeed;
+			_pacman->_sourceRect->Y = 64;
+			break;
+		case 3:
+			_pacman->_Position->Y -= pacmanSpeed;
+			_pacman->_sourceRect->Y = 96;
+			break;
+		case 4:
+			_pacman->_Position->Y += pacmanSpeed;
+			_pacman->_sourceRect->Y = 32;
+			break;
+		}
 	}
 };
 
@@ -267,34 +276,37 @@ void Pacman::CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey) {
 };
 
 void Pacman::UpdatePacman(int elapsedTime) {
-	_pacman->_currentFrameTime += elapsedTime;
-	if (_pacman->_currentFrameTime > _cPacmanFrameTime)
-	{
-		_pacman->_Frame++;
-		if (_pacman->_Frame >= 3)
-			_pacman->_Frame = 0;
+	if (!_pacman->_Dead) {
+		_pacman->_currentFrameTime += elapsedTime;
+		if (_pacman->_currentFrameTime > _cPacmanFrameTime)
+		{
+			_pacman->_Frame++;
+			if (_pacman->_Frame >= 3)
+				_pacman->_Frame = 0;
 
-		_pacman->_currentFrameTime = 0;
-	}
-
-	// Controls other Pacman collision
-	for (int i = 0; i < MUNCHIECOUNT; i++) {
-		if (Collision(_munchie[i]->_Position, _munchie[i]->_Rect)) {
-			delete _munchie[i]->_Rect;
-			delete _munchie[i]->_Position;
-			_pacman->_Score += 100;
+			_pacman->_currentFrameTime = 0;
 		}
-	}
 
-	if (Collision(_cherry->_Position, _cherry->_Rect)) {
-		delete _cherry->_Rect;
-		delete _cherry->_Position;
-		_pacman->_Score += 250;
-	}
+		// Controls other Pacman collision
+		for (int i = 0; i < MUNCHIECOUNT; i++) {
+			if (Collision(_pacman->_Position, _pacman->_sourceRect, _munchie[i]->_Position, _munchie[i]->_Rect)) {
+				delete _munchie[i]->_Rect;
+				delete _munchie[i]->_Position;
+				_pacman->_Score += 100;
+				Audio::Play(_pop);
+			}
+		}
 
-	for (int i = 0; i < GHOSTCOUNT; i++) {
-		if (Collision(_ghost[i]->_Position, _ghost[i]->_sourceRect)) {
-			_pacman->_Dead = true;
+		if (Collision(_pacman->_Position, _pacman->_sourceRect, _cherry->_Position, _cherry->_Rect)) {
+			delete _cherry->_Rect;
+			delete _cherry->_Position;
+			_pacman->_Score += 250;
+		}
+
+		for (int i = 0; i < GHOSTCOUNT; i++) {
+			if (Collision(_pacman->_Position, _pacman->_sourceRect, _ghost[i]->_Position, _ghost[i]->_sourceRect)) {
+				_pacman->_Dead = true;
+			}
 		}
 	}
 }
