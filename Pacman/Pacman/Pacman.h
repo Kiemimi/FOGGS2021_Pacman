@@ -1,6 +1,6 @@
 #pragma once
 #define MUNCHIECOUNT 200
-#define GHOSTCOUNT 10
+#define GHOSTCOUNT 1
 
 // If Windows and not in Debug, this will run without a console window
 // You can use this to output information when debugging using cout or cerr
@@ -51,6 +51,13 @@ struct MovingEnemy {
 	float		_Speed;
 };
 
+struct ColliderObject {
+	// Data to represent walls and the like
+	Vector2*	_Position;
+	Texture2D*	_Texture;
+	Rect*		_SourceRect;
+};
+
 class Pacman : public Game
 {
 private:
@@ -59,9 +66,10 @@ private:
 	Enemy* _munchie[MUNCHIECOUNT];
 	Enemy* _cherry;
 	MovingEnemy* _ghost[GHOSTCOUNT];
+	ColliderObject* _wall[6];
 
 	SoundEffect* _pop;
-
+	int wall;
 	// Input Methods
 	void Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
 
@@ -108,6 +116,8 @@ public:
 
 	/// <summary> Called every frame - draw game here. </summary>
 	void virtual Draw(int elapsedTime);
+
+	void virtual LoadLevel();
 
 	/// <summary> Takes collision with munchies </summary>
 	bool virtual Collision(Vector2* Actor, Rect* ActorRect, Vector2* Target, Rect* TargetRect);
