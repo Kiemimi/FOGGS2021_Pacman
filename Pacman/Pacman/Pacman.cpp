@@ -4,16 +4,16 @@
 #include <sstream>
 
 bool once = true;
+gameStates gameState = MainMenu;
 
 Pacman::Pacman(int argc, char* argv[])
-	: Game(argc, argv), _pacman(), _munchie(), gameStarted(false), _cSpeed(0.25f), _cPacmanFrameTime(250), _cMunchieFrameTime(25000), _cCherryFrameTime(500)
+	: Game(argc, argv), _pacman(), _munchie(), _cSpeed(0.25f), _cPacmanFrameTime(250), _cMunchieFrameTime(25000), _cCherryFrameTime(500)
 {
 	if (once) {
 		LoadLevel();
 		once = false;
 	}
 	_pacman  = new Player();
-	_pacman->_Dead = false;
 
 	for (int i = 0; i < MUNCHIECOUNT; i++) {
 		_munchie[i] = new Enemy();
@@ -39,8 +39,7 @@ Pacman::Pacman(int argc, char* argv[])
 	_pacman->_movementState = 5;
 	_pacman->_Score = 0;
 	_pacman->_pKeyDown = false;
-	
-	_paused = false;
+
 	_pop = new SoundEffect();
 
 	//Initialise important Game aspects
@@ -153,12 +152,12 @@ void Pacman::Update(int elapsedTime)
 	Input::MouseState* mouseState = Input::Mouse::GetState();
 
 	// Creates the condition for exiting the start menu
-	if (keyboardState->IsKeyDown(Input::Keys::SPACE) && !gameStarted) {
-		gameStarted = true;
+	if (keyboardState->IsKeyDown(Input::Keys::SPACE) && gameState == MainMenu) {
+		gameState = Active;
 	}	
 	else
 	{
-		if (!_paused && gameStarted)
+		if (gameState != Paused)
 		{
 			Input(elapsedTime, keyboardState, mouseState);
 			CheckViewportCollision();
@@ -207,7 +206,7 @@ void Pacman::Draw(int elapsedTime)
 	// Draws String
 	SpriteBatch::DrawString(stream.str().c_str(), _stringPosition, Color::White);
 	
-	if (_paused)
+	if (gameState == Paused)
 	{
 		std::stringstream menuStream; 
 		menuStream << "PAUSED!";
@@ -216,7 +215,7 @@ void Pacman::Draw(int elapsedTime)
 		SpriteBatch::DrawString(menuStream.str().c_str(), _menuStringPosition, Color::Red);
 	}
 
-	if (!gameStarted)
+	if (gameState == MainMenu)
 	{
 		std::stringstream menuStream;
 		menuStream << "PRESS SPACE TO START!";
@@ -243,7 +242,7 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 	float pacmanSpeed = _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 
 	// Controls the player's movement by taking an "enum" for movement states
-	if (!_pacman->_Dead) {
+	if (gameState == Active) {
 #pragma region KeyboardInputHandler
 		if (state->IsKeyDown(Input::Keys::D))
 			_pacman->_movementState = 1;
@@ -253,11 +252,8 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 			_pacman->_movementState = 3;
 		if (state->IsKeyDown(Input::Keys::S))
 			_pacman->_movementState = 4;
-		if (state->IsKeyDown(Input::Keys::R)) {
-			_cherry->_Position->X = rand() % Graphics::GetViewportWidth() - 64;
-			_cherry->_Position->Y = rand() % Graphics::GetViewportWidth() - 64;
-		}
-		state->IsKeyDown(Input::Keys::LEFTSHIFT) ? _pacman->_speedMultiplier = 2.25f : _pacman->_speedMultiplier = 1.0f;
+
+		state->IsKeyDown(Input::Keys::LEFTSHIFT) ? _pacman->_speedMultiplier = 1.5f : _pacman->_speedMultiplier = 1.0f;
 #pragma endregion
 #pragma region MouseInputHandler
 		if (mouseState->LeftButton == Input::ButtonState::PRESSED)
@@ -310,15 +306,19 @@ void Pacman::CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey) {
 
 	if (state->IsKeyDown(pauseKey) && !_pacman->_pKeyDown) {
 		_pacman->_pKeyDown = true;
-		_paused = !_paused;
+		if (gameState == Active)
+			gameState = Paused;
+		else if (gameState == Paused)
+			gameState = Active;
 	}
 
-	if (state->IsKeyUp(pauseKey))
+	if (state->IsKeyUp(pauseKey)) {
 		_pacman->_pKeyDown = false;
+	}
 };
 
 void Pacman::UpdatePacman(int elapsedTime) {
-	if (!_pacman->_Dead) {
+	if (gameState == Active) {
 		_pacman->_currentFrameTime += elapsedTime;
 		if (_pacman->_currentFrameTime > _cPacmanFrameTime)
 		{
@@ -342,16 +342,16 @@ void Pacman::UpdatePacman(int elapsedTime) {
 		for (int i = 0; i < 7; i++) {
 			if (Collision(_pacman->_Position, _pacman->_sourceRect, _wall[i]->_Position, _wall[i]->_SourceRect)) {
 				if (_pacman->_movementState == 1) {
-					_pacman->_Position->X -= _cSpeed * elapsedTime;
+					_pacman->_Position->X -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 				}
 				else if (_pacman->_movementState == 2) {
-					_pacman->_Position->X += _cSpeed * elapsedTime;
+					_pacman->_Position->X += _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 				}
 				else if (_pacman->_movementState == 3) {
-					_pacman->_Position->Y += _cSpeed * elapsedTime;
+					_pacman->_Position->Y += _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 				}
 				else if (_pacman->_movementState == 4) {
-					_pacman->_Position->Y -= _cSpeed * elapsedTime;
+					_pacman->_Position->Y -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 				}
 			}
 		}
@@ -364,9 +364,12 @@ void Pacman::UpdatePacman(int elapsedTime) {
 
 		for (int i = 0; i < GHOSTCOUNT; i++) {
 			if (Collision(_pacman->_Position, _pacman->_sourceRect, _ghost[i]->_Position, _ghost[i]->_sourceRect)) {
-				_pacman->_Dead = true;
+				gameState = Dead;
 			}
 		}
+	}
+	else if (gameState == Dead) {
+		gameState = MainMenu;
 	}
 }
 
@@ -409,6 +412,4 @@ void Pacman::UpdateGhost(MovingEnemy* ghost, int elapsedtime) {
 	else if (ghost->_Position->X <= 0) {
 		ghost->_Direction = 0;
 	}
-	
-
 }

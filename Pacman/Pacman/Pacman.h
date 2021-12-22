@@ -16,10 +16,19 @@
 // Reduces the amount of typing by including all classes in S2D namespace
 using namespace S2D;
 
+enum gameStates
+{
+	MainMenu = 0,
+	Active,
+	Dead,
+	Paused,
+	Settings,
+
+};
+
 struct Player
 {
 	// Data to represent Pacman
-	bool		_Dead;
 	Vector2*	_Position;
 	Rect*		_sourceRect;
 	Texture2D*	_Texture;
@@ -61,7 +70,6 @@ struct ColliderObject {
 class Pacman : public Game
 {
 private:
-
 	Player* _pacman;
 	Enemy* _munchie[MUNCHIECOUNT];
 	Enemy* _cherry;
@@ -96,8 +104,6 @@ private:
 	Texture2D*	_menuBackground; 
 	Rect*		_menuRectangle; 
 	Vector2*	_menuStringPosition; 
-	bool		gameStarted;
-	bool		_paused;
 
 	bool		_selfCollision;
 
