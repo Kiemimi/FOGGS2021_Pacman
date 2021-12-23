@@ -3,7 +3,6 @@
 #include <fstream>
 #include <sstream>
 
-bool once = true;
 gameStates gameState = MainMenu;
 
 Pacman::Pacman(int argc, char* argv[])
@@ -11,12 +10,6 @@ Pacman::Pacman(int argc, char* argv[])
 {
 	_pacman  = new Player();
 	_selfCollision = false;
-
-	for (int i = 0; i < GHOSTCOUNT; i++) {
-		_ghost[i] = new MovingEnemy();
-		_ghost[i]->_Direction = 0;
-		_ghost[i]->_Speed = 0.2f;
-	}
 
 	_cherry	 = new Enemy();
 	
@@ -51,8 +44,15 @@ Pacman::~Pacman()
 		delete _munchie[i]->_Rect;
 		delete _munchie[i];
 	}
+
+	for (int i = 0; i < wall; i++) {
+		delete _wall[i]->_Texture;
+		delete _wall[i]->_SourceRect;
+		delete _wall[i];
+	}
 	
 	delete[] _munchie;
+	delete[] _wall;
 	delete _cherry->_Texture;
 	delete _cherry->_Rect;
 	delete _cherry;
@@ -64,14 +64,19 @@ void Pacman::LoadLevel(string levelName)
 {
 	ifstream ifs(levelName, ios::binary | ios::in);
 	string line;
+
 	wall = 0;	
 	munchie = 0;
+	ghost = 0;
 
 	Texture2D* munchieTex = new Texture2D();
 	munchieTex->Load("Textures/Munchie.png", false);
 
 	Texture2D* wallTex = new Texture2D();
 	wallTex->Load("Textures/Wall.png", false);
+
+	Texture2D* ghostTex = new Texture2D();
+	ghostTex->Load("Textures/GhostBlue.png", true);
 
 	while (!ifs.eof()) {
 		while (getline(ifs, line))
@@ -97,6 +102,15 @@ void Pacman::LoadLevel(string levelName)
 					_munchie[munchie]->_Rect = new Rect(0.0f, 0.0f, 12, 12);
 					munchie++;
 				}
+				else if (line[i] == 'M') {
+					_ghost[ghost] = new MovingEnemy();
+					_ghost[ghost]->_Direction = 0;
+					_ghost[ghost]->_Speed = 0.2f;
+					_ghost[ghost]->_Texture = ghostTex;
+					_ghost[ghost]->_Position = new Vector2(xOfset + 6, yOfset + 6);
+					_ghost[ghost]->_sourceRect = new Rect(0.0f, 0.0f, 20, 20);
+					ghost++;
+				}
 			}
 		}
 	}
@@ -104,19 +118,16 @@ void Pacman::LoadLevel(string levelName)
 
 void Pacman::LoadContent()
 {
-	if (once) {
+	do
+	{
 		LoadLevel("levels/1.txt");
-		once = false;
-	}
+	} while (false);
 
 	// Load Pacman
 	_pacman->_Texture = new Texture2D();
 	_pacman->_Texture->Load("Textures/Pacman.png", false);
 	_pacman->_Position = new Vector2(350.0f, 350.0f);
 	_pacman->_sourceRect = new Rect(350.0f, 350.0f, 28, 28);
-
-	Texture2D* ghostTex = new Texture2D();
-	ghostTex->Load("Textures/GhostBlue.png", true);
 
 	_eat1->Load("Sounds/eat1.wav");
 	_eat2->Load("Sounds/eat2.wav");
@@ -127,12 +138,6 @@ void Pacman::LoadContent()
 	_cherry->_Texture->Load("Textures/Cherry.png", true);
 	_cherry->_Rect = new Rect(0.0f, 0.0f, 32, 32);
 	_cherry->_Position = new Vector2(500.0f, 250.0f);
-
-	for (int i = 0; i < GHOSTCOUNT; i++) {
-		_ghost[i]->_Texture = ghostTex;
-		_ghost[i]->_Position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
-		_ghost[i]->_sourceRect = new Rect(0.0f, 0.0f, 20, 20);
-	}
 
 	// Load menu
 	_menuBackground = new Texture2D();
@@ -162,7 +167,7 @@ void Pacman::Update(int elapsedTime)
 			CheckViewportCollision();
 			UpdatePacman(elapsedTime);
 
-			for (int i = 0; i < GHOSTCOUNT; i++) {
+			for (int i = 0; i < ghost; i++) {
 				UpdateGhost(_ghost[i], elapsedTime);
 			}
 
@@ -190,7 +195,7 @@ void Pacman::Draw(int elapsedTime)
 		_munchie[i]->_Rect->X = _munchie[i]->_Rect->Width * _munchie[i]->_frameCount;
 	}
 	
-	for (int i = 0; i < GHOSTCOUNT; i++) {
+	for (int i = 0; i < ghost; i++) {
 		SpriteBatch::Draw(_ghost[i]->_Texture, _ghost[i]->_Position, _ghost[i]->_sourceRect);
 	}
 
@@ -372,7 +377,7 @@ void Pacman::UpdatePacman(int elapsedTime) {
 			_pacman->_Score += 250;
 		}
 
-		for (int i = 0; i < GHOSTCOUNT; i++) {
+		for (int i = 0; i < ghost; i++) {
 			if (Collision(_pacman->_Position, _pacman->_sourceRect, _ghost[i]->_Position, _ghost[i]->_sourceRect)) {
 				gameState = Dead;
 			}
@@ -409,17 +414,32 @@ void Pacman::UpdateCherry(int elapsedTime) {
 	_cherry->_currentFrameTime += elapsedTime;
 }
 
-void Pacman::UpdateGhost(MovingEnemy* ghost, int elapsedtime) {
-	if (ghost->_Direction == 0) {
-		ghost->_Position->X += ghost->_Speed * elapsedtime;
+float Pacman::distanceToPacman(float input, float input2) {
+	return sqrt(pow(input - _pacman->_Position->X, 2) + pow(input2 - _pacman->_Position->Y, 2));
+}
+
+void Pacman::UpdateGhost(MovingEnemy* ghosts, int elapsedtime) {
+	int gridX = Graphics::GetViewportWidth() / 64;
+	int gridY = Graphics::GetViewportHeight() / 64;
+
+	if (distanceToPacman(ghosts->_Position->X + gridX, ghosts->_Position->Y) < distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y))
+	{
+		ghosts->_Position->X += ghosts->_Speed * elapsedtime;
+		cout << "Right" << endl;
 	}
-	else if (ghost->_Direction == 1) {
-		ghost->_Position->X -= ghost->_Speed * elapsedtime;
+	else if (distanceToPacman(ghosts->_Position->X - gridX, ghosts->_Position->Y) < distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y))
+	{
+		ghosts->_Position->X -= ghosts->_Speed * elapsedtime;
+		cout << "Left" << endl;
 	}
-	if (ghost->_Position->X + ghost->_sourceRect->Width >= Graphics::GetViewportWidth()) {
-		ghost->_Direction = 1;
+	else if (distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y + gridY) < distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y))
+	{
+		ghosts->_Position->Y += ghosts->_Speed * elapsedtime;
+		cout << "Down" << endl;
 	}
-	else if (ghost->_Position->X <= 0) {
-		ghost->_Direction = 0;
+	else if (distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y - gridY) < distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y))
+	{
+		ghosts->_Position->Y -= ghosts->_Speed * elapsedtime;
+		cout << "Up" << endl;
 	}
 }

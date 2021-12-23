@@ -1,6 +1,6 @@
 #pragma once
 #define MUNCHIECOUNT 200
-#define GHOSTCOUNT 4
+#define GHOSTCOUNT 1
 #define WALLCOUNT 501
 
 // If Windows and not in Debug, this will run without a console window
@@ -83,6 +83,7 @@ private:
 	ColliderObject* _wall[WALLCOUNT];
 	int wall;
 	int munchie;
+	int ghost;
 
 	SoundEffect* _eat1;
 	SoundEffect* _eat2;
@@ -99,6 +100,7 @@ private:
 	void UpdateMunchie(Enemy*, int elapsedTime);
 	void UpdateCherry(int elapsedTime);
 	void UpdateGhost(MovingEnemy*, int elapsedTime);
+	float distanceToPacman(float input, float input2);
 
 	// Pacman data
 	const float _cSpeed;
