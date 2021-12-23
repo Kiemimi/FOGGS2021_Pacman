@@ -68,7 +68,7 @@ void Pacman::LoadLevel(string levelName)
 	munchieTex->Load("Textures/Munchie.png", false);
 
 	Texture2D* wallTex = new Texture2D();
-	munchieTex->Load("Textures/Munchie.png", false);
+	wallTex->Load("Textures/Wall.png", false);
 
 	while (!ifs.eof()) {
 		while (getline(ifs, line))
@@ -106,7 +106,7 @@ void Pacman::LoadContent()
 	_pacman->_Texture = new Texture2D();
 	_pacman->_Texture->Load("Textures/Pacman.png", false);
 	_pacman->_Position = new Vector2(350.0f, 350.0f);
-	_pacman->_sourceRect = new Rect(350.0f, 350.0f, 32, 32);
+	_pacman->_sourceRect = new Rect(350.0f, 350.0f, 28, 28);
 
 	Texture2D* ghostTex = new Texture2D();
 	ghostTex->Load("Textures/GhostBlue.png", true);
