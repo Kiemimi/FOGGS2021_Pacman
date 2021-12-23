@@ -25,8 +25,10 @@ Pacman::Pacman(int argc, char* argv[])
 	_pacman->_movementState = 5;
 	_pacman->_Score = 0;
 	_pacman->_pKeyDown = false;
+	_pacman->_soundState = 0;
 
-	_pop = new SoundEffect();
+	_eat1 = new SoundEffect();
+	_eat2 = new SoundEffect();
 
 	//Initialise important Game aspects
 	Audio::Initialise();
@@ -54,7 +56,8 @@ Pacman::~Pacman()
 	delete _cherry->_Texture;
 	delete _cherry->_Rect;
 	delete _cherry;
-	delete _pop;
+	delete _eat1;
+	delete _eat2;
 }
 
 void Pacman::LoadLevel(string levelName)
@@ -74,11 +77,15 @@ void Pacman::LoadLevel(string levelName)
 		while (getline(ifs, line))
 		{
 			for (int i = 0; i < line.size(); i++) {
+
+				int xOfset = i * 32;
+				int yOfset = (int(ifs.tellg() / 34) * 32) - 32;
+
 				if (line[i] == 'x') {
 					_wall[wall] = new ColliderObject();
 					_wall[wall]->_Texture = wallTex;
-					_wall[wall]->_Position = new Vector2(i * 32, int(ifs.tellg()) - 32);
-					_wall[wall]->_SourceRect = new Rect(_wall[wall]->_Position->X, _wall[wall]->_Position->Y, 32, 34);
+					_wall[wall]->_Position = new Vector2(xOfset, yOfset);
+					_wall[wall]->_SourceRect = new Rect(0.0f, 0.0f, 32, 32);
 					wall++;
 				}
 				else if (line[i] == 'o') {
@@ -86,8 +93,8 @@ void Pacman::LoadLevel(string levelName)
 					_munchie[munchie]->_currentFrameTime = 0;
 					_munchie[munchie]->_Frame = 0;
 					_munchie[munchie]->_Texture = munchieTex;
-					_munchie[munchie]->_Position = new Vector2(((i * 32) + 10), ((int(ifs.tellg()) - 32)) + 10);
-					_munchie[munchie]->_Rect = new Rect(_munchie[munchie]->_Position->X, _munchie[munchie]->_Position->Y, 12, 12);
+					_munchie[munchie]->_Position = new Vector2(xOfset + 10, yOfset + 10);
+					_munchie[munchie]->_Rect = new Rect(0.0f, 0.0f, 12, 12);
 					munchie++;
 				}
 			}
@@ -111,7 +118,9 @@ void Pacman::LoadContent()
 	Texture2D* ghostTex = new Texture2D();
 	ghostTex->Load("Textures/GhostBlue.png", true);
 
-	_pop->Load("Sounds/pop.wav");
+	_eat1->Load("Sounds/eat1.wav");
+	_eat2->Load("Sounds/eat2.wav");
+	
 	
 	// Load Cherry
 	_cherry->_Texture = new Texture2D();
@@ -324,8 +333,15 @@ void Pacman::UpdatePacman(int elapsedTime) {
 			if (Collision(_pacman->_Position, _pacman->_sourceRect, _munchie[i]->_Position, _munchie[i]->_Rect)) {
 				delete _munchie[i]->_Rect;
 				delete _munchie[i]->_Position;
-				_pacman->_Score += 100;
-				Audio::Play(_pop);
+				_pacman->_Score += 10;
+				if (_pacman->_soundState == 0) {
+					Audio::Play(_eat1);
+					_pacman->_soundState = 1;
+				}
+				else {
+					Audio::Play(_eat2);
+					_pacman->_soundState = 0;
+				}
 			}
 		}
 

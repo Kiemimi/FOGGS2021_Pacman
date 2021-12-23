@@ -41,6 +41,8 @@ struct Player
 	int			_Frame;
 	float		_speedMultiplier;
 	bool		_pKeyDown;
+	
+	int			_soundState;
 };
 
 struct Enemy
@@ -79,10 +81,12 @@ private:
 	Enemy* _cherry;
 	MovingEnemy* _ghost[GHOSTCOUNT];
 	ColliderObject* _wall[WALLCOUNT];
-
-	SoundEffect* _pop;
 	int wall;
 	int munchie;
+
+	SoundEffect* _eat1;
+	SoundEffect* _eat2;
+	
 	// Input Methods
 	void Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
 
