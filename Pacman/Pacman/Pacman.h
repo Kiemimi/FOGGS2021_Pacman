@@ -1,6 +1,7 @@
 #pragma once
 #define MUNCHIECOUNT 200
-#define GHOSTCOUNT 1
+#define GHOSTCOUNT 4
+#define WALLCOUNT 200
 
 // If Windows and not in Debug, this will run without a console window
 // You can use this to output information when debugging using cout or cerr
@@ -12,6 +13,8 @@
 
 // Just need to include main header file
 #include "S2D/S2D.h"
+#include <iostream>
+#include <string>
 
 // Reduces the amount of typing by including all classes in S2D namespace
 using namespace S2D;
@@ -65,6 +68,7 @@ struct ColliderObject {
 	Vector2*	_Position;
 	Texture2D*	_Texture;
 	Rect*		_SourceRect;
+	int			wall;
 };
 
 class Pacman : public Game
@@ -74,10 +78,11 @@ private:
 	Enemy* _munchie[MUNCHIECOUNT];
 	Enemy* _cherry;
 	MovingEnemy* _ghost[GHOSTCOUNT];
-	ColliderObject* _wall[6];
+	ColliderObject* _wall[WALLCOUNT];
 
 	SoundEffect* _pop;
 	int wall;
+	int munchie;
 	// Input Methods
 	void Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
 
@@ -123,7 +128,7 @@ public:
 	/// <summary> Called every frame - draw game here. </summary>
 	void virtual Draw(int elapsedTime);
 
-	void virtual LoadLevel();
+	void virtual LoadLevel(string levelName);
 
 	/// <summary> Takes collision with munchies </summary>
 	bool virtual Collision(Vector2* Actor, Rect* ActorRect, Vector2* Target, Rect* TargetRect);

@@ -9,18 +9,7 @@ gameStates gameState = MainMenu;
 Pacman::Pacman(int argc, char* argv[])
 	: Game(argc, argv), _pacman(), _munchie(), _cSpeed(0.25f), _cPacmanFrameTime(250), _cMunchieFrameTime(25000), _cCherryFrameTime(500)
 {
-	if (once) {
-		LoadLevel();
-		once = false;
-	}
 	_pacman  = new Player();
-
-	for (int i = 0; i < MUNCHIECOUNT; i++) {
-		_munchie[i] = new Enemy();
-		_munchie[i]->_currentFrameTime = 0;
-		_munchie[i]->_Frame = 0;
-	}
-	
 	_selfCollision = false;
 
 	for (int i = 0; i < GHOSTCOUNT; i++) {
@@ -30,10 +19,7 @@ Pacman::Pacman(int argc, char* argv[])
 	}
 
 	_cherry	 = new Enemy();
-	for (int i = 0; i < 7; i++)
-		_wall[i] = new ColliderObject();
 	
-
 	_pacman->_currentFrameTime = 0;
 	_pacman->_Frame = 0;
 	_pacman->_movementState = 5;
@@ -58,7 +44,7 @@ Pacman::~Pacman()
 	delete _pacman->_Position;
 	delete _pacman;
 
-	for (int i = 0; i < MUNCHIECOUNT; i++) {
+	for (int i = 0; i < munchie; i++) {
 		delete _munchie[i]->_Texture;
 		delete _munchie[i]->_Rect;
 		delete _munchie[i];
@@ -71,50 +57,61 @@ Pacman::~Pacman()
 	delete _pop;
 }
 
-void Pacman::LoadLevel()
+void Pacman::LoadLevel(string levelName)
 {
-	ifstream ifs("Levels/1.txt");
+	ifstream ifs(levelName, ios::binary | ios::in);
 	string line;
+	wall = 0;	
+	munchie = 0;
 
-	while (ifs) {
+	Texture2D* munchieTex = new Texture2D();
+	munchieTex->Load("Textures/Munchie.png", false);
+
+	Texture2D* wallTex = new Texture2D();
+	munchieTex->Load("Textures/Munchie.png", false);
+
+	while (!ifs.eof()) {
 		while (getline(ifs, line))
 		{
-			for (int j = 0; j < 25; j++) {
-				if (line[j] == '`') {
-					cout << " ";
-				}
-				else {
-					cout << "x";
+			for (int i = 0; i < line.size(); i++) {
+				if (line[i] == 'x') {
+					_wall[wall] = new ColliderObject();
+					_wall[wall]->_Texture = wallTex;
+					_wall[wall]->_Position = new Vector2(i * 32, int(ifs.tellg()) - 32);
+					_wall[wall]->_SourceRect = new Rect(_wall[wall]->_Position->X, _wall[wall]->_Position->Y, 32, 34);
 					wall++;
 				}
+				else if (line[i] == 'o') {
+					_munchie[munchie] = new Enemy();
+					_munchie[munchie]->_currentFrameTime = 0;
+					_munchie[munchie]->_Frame = 0;
+					_munchie[munchie]->_Texture = munchieTex;
+					_munchie[munchie]->_Position = new Vector2(((i * 32) + 10), ((int(ifs.tellg()) - 32)) + 10);
+					_munchie[munchie]->_Rect = new Rect(_munchie[munchie]->_Position->X, _munchie[munchie]->_Position->Y, 12, 12);
+					munchie++;
+				}
 			}
-			cout << endl;
 		}
 	}
 }
 
 void Pacman::LoadContent()
 {
+	if (once) {
+		LoadLevel("levels/1.txt");
+		once = false;
+	}
+
 	// Load Pacman
 	_pacman->_Texture = new Texture2D();
 	_pacman->_Texture->Load("Textures/Pacman.png", false);
 	_pacman->_Position = new Vector2(350.0f, 350.0f);
 	_pacman->_sourceRect = new Rect(350.0f, 350.0f, 32, 32);
 
-	Texture2D* munchieTex = new Texture2D();
-	munchieTex->Load("Textures/Munchie.png", false);
 	Texture2D* ghostTex = new Texture2D();
 	ghostTex->Load("Textures/GhostBlue.png", true);
 
 	_pop->Load("Sounds/pop.wav");
-
-	// Load Munchie
-	for (int i = 0; i < MUNCHIECOUNT; i++) {
-		_munchie[i]->_Texture = munchieTex;
-		_munchie[i]->_Rect = new Rect(0.0f, 0.0f, 12, 12);
-		_munchie[i]->_Position = new Vector2(rand() % Graphics::GetViewportWidth(), (rand() % Graphics::GetViewportHeight()));
-
-	}
 	
 	// Load Cherry
 	_cherry->_Texture = new Texture2D();
@@ -128,13 +125,6 @@ void Pacman::LoadContent()
 		_ghost[i]->_sourceRect = new Rect(0.0f, 0.0f, 20, 20);
 	}
 
-	// Load Walls
-	for (int i = 0; i < 7; i++) {
-		_wall[i]->_Texture = new Texture2D();
-		_wall[i]->_Texture->Load("Wall.png", true);
-		_wall[i]->_Position = new Vector2((i * 32), (i * 32));
-		_wall[i]->_SourceRect = new Rect(_wall[i]->_Position->X, _wall[i]->_Position->Y, 32, 32);
-	}
 	// Load menu
 	_menuBackground = new Texture2D();
 	_menuBackground->Load("Textures/Transparency.png", false);
@@ -167,7 +157,7 @@ void Pacman::Update(int elapsedTime)
 				UpdateGhost(_ghost[i], elapsedTime);
 			}
 
-			for (int i = 0; i < MUNCHIECOUNT; i++) {
+			for (int i = 0; i < munchie; i++) {
 				UpdateMunchie(_munchie[i], elapsedTime);
 			}
 			UpdateCherry(elapsedTime);
@@ -186,7 +176,7 @@ void Pacman::Draw(int elapsedTime)
 
 	SpriteBatch::Draw(_pacman->_Texture, _pacman->_Position, _pacman->_sourceRect); // Draws Pacman
 
-	for (int i = 0; i < MUNCHIECOUNT; i++) {
+	for (int i = 0; i < munchie; i++) {
 		SpriteBatch::Draw(_munchie[i]->_Texture, _munchie[i]->_Position, _munchie[i]->_Rect);
 		_munchie[i]->_Rect->X = _munchie[i]->_Rect->Width * _munchie[i]->_frameCount;
 	}
@@ -195,7 +185,7 @@ void Pacman::Draw(int elapsedTime)
 		SpriteBatch::Draw(_ghost[i]->_Texture, _ghost[i]->_Position, _ghost[i]->_sourceRect);
 	}
 
-	for (int i = 0; i < 7; i++)
+	for (int i = 0; i < wall; i++)
 		SpriteBatch::Draw(_wall[i]->_Texture, _wall[i]->_Position, _wall[i]->_SourceRect);
 
 	_pacman->_sourceRect->X = _pacman->_sourceRect->Width * _pacman->_Frame;
@@ -330,7 +320,7 @@ void Pacman::UpdatePacman(int elapsedTime) {
 		}
 
 		// Controls other Pacman collision
-		for (int i = 0; i < MUNCHIECOUNT; i++) {
+		for (int i = 0; i < munchie; i++) {
 			if (Collision(_pacman->_Position, _pacman->_sourceRect, _munchie[i]->_Position, _munchie[i]->_Rect)) {
 				delete _munchie[i]->_Rect;
 				delete _munchie[i]->_Position;
@@ -339,7 +329,7 @@ void Pacman::UpdatePacman(int elapsedTime) {
 			}
 		}
 
-		for (int i = 0; i < 7; i++) {
+		for (int i = 0; i < wall; i++) {
 			if (Collision(_pacman->_Position, _pacman->_sourceRect, _wall[i]->_Position, _wall[i]->_SourceRect)) {
 				if (_pacman->_movementState == 1) {
 					_pacman->_Position->X -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
@@ -353,6 +343,10 @@ void Pacman::UpdatePacman(int elapsedTime) {
 				else if (_pacman->_movementState == 4) {
 					_pacman->_Position->Y -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 				}
+
+				/*if (_pacman->_Position->X + _pacman->_sourceRect->Width > _wall[i]->_Position->X + _wall[i]->_SourceRect->Width) {
+					_pacman->_Position->X = _wall[i]->_Position->X - _wall[i]->_SourceRect->Width;
+				}*/
 			}
 		}
 
@@ -374,7 +368,7 @@ void Pacman::UpdatePacman(int elapsedTime) {
 }
 
 void Pacman::UpdateMunchie(Enemy*, int elapsedTime) {
-	for (int i = 0; i < MUNCHIECOUNT; i++) {
+	for (int i = 0; i < munchie; i++) {
 		if (_munchie[i]->_currentFrameTime > _cMunchieFrameTime) {
 			_munchie[i]->_frameCount++;
 
