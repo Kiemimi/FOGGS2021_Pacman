@@ -1,7 +1,7 @@
 #pragma once
 #define MUNCHIECOUNT 200
 #define GHOSTCOUNT 4
-#define WALLCOUNT 200
+#define WALLCOUNT 501
 
 // If Windows and not in Debug, this will run without a console window
 // You can use this to output information when debugging using cout or cerr
