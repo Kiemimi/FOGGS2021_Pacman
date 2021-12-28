@@ -1,5 +1,5 @@
 #pragma once
-#define MUNCHIECOUNT 200
+#define MUNCHIECOUNT 500
 #define GHOSTCOUNT 1
 #define WALLCOUNT 501
 
@@ -26,32 +26,34 @@ enum gameStates
 	Dead,
 	Paused,
 	Settings,
-
 };
 
 struct Player
 {
 	// Data to represent Pacman
 	Vector2*	_Position;
+	Vector2*	_centerPosition;
 	Rect*		_sourceRect;
+	int			_gridPosX;
+	int			_gridPosY;
+
 	Texture2D*	_Texture;
 	int			_Score;
 	int			_movementState;
 	int			_currentFrameTime;
 	int			_Frame;
+	int			_soundState;
 	float		_speedMultiplier;
 	bool		_pKeyDown;
-	
-	int			_soundState;
 };
 
 struct Enemy
 {
 	// Data to represent Munchie
-	int			_frameCount;
 	Rect*		_Rect;
 	Vector2*	_Position;
 	Texture2D*	_Texture;
+	int			_frameCount;
 	int			_Frame;
 	int			_currentFrameTime;
 };
@@ -59,9 +61,11 @@ struct Enemy
 struct MovingEnemy {
 	// Data to represent Ghosts
 	Vector2*	_Position;
-	Texture2D*	_Texture;
+	Vector2*	_centerPosition;
 	Rect*		_sourceRect;
 	int			_Direction;
+
+	Texture2D*	_Texture;
 	float		_Speed;
 };
 
@@ -76,47 +80,51 @@ struct ColliderObject {
 class Pacman : public Game
 {
 private:
-	Player* _pacman;
-	Enemy* _munchie[MUNCHIECOUNT];
-	Enemy* _cherry;
-	MovingEnemy* _ghost[GHOSTCOUNT];
-	ColliderObject* _wall[WALLCOUNT];
-	int wall;
-	int munchie;
-	int ghost;
 
-	SoundEffect* _eat1;
-	SoundEffect* _eat2;
+	// Entities In game
+	Player*			_pacman;
+	Enemy*			_munchie[MUNCHIECOUNT];
+	Enemy*			_cherry;
+	MovingEnemy*	_ghost[GHOSTCOUNT];
+	ColliderObject* _wall[WALLCOUNT];
+
+	// Variables counting the amount in-game
+	int				wall;
+	int				munchie;
+	int				ghost;
+
+	// Assets
+	SoundEffect*	_eat1;
+	SoundEffect*	_eat2;
+
+	// Tile System Variable
+	void		UpdateGhost(MovingEnemy*, int elapsedTime);
+	int			masterGrid[24][32];
+	int			gridX;
+	int			gridY;
 	
 	// Input Methods
-	void Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
-
-	// Check Methods
-	void CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey);
-	void CheckViewportCollision();
+	void		Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
 
 	// Update Methods
-	void UpdatePacman(int elapsedTime);
-	void UpdateMunchie(Enemy*, int elapsedTime);
-	void UpdateCherry(int elapsedTime);
-	void UpdateGhost(MovingEnemy*, int elapsedTime);
-	float distanceToPacman(float input, float input2);
-
+	void		UpdateMunchie(Enemy*, int elapsedTime);
+	void		UpdateCherry(int elapsedTime);
+	float		distanceToPacman(float input, float input2);
+	
 	// Pacman data
+	void		CheckViewportCollision();
+	void		UpdatePacman(int elapsedTime);
 	const float _cSpeed;
 	const int	_cPacmanFrameTime;
 	const int	_cMunchieFrameTime;
 	const int	_cCherryFrameTime;
 
-	// Position for String
-	Vector2*	_stringPosition;
-
 	// Data for Menu
+	void		CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey);
+	Vector2*	_stringPosition;
 	Texture2D*	_menuBackground; 
 	Rect*		_menuRectangle; 
 	Vector2*	_menuStringPosition; 
-
-	bool		_selfCollision;
 
 public:
 	/// <summary> Constructs the Pacman class. </summary>
@@ -134,8 +142,13 @@ public:
 	/// <summary> Called every frame - draw game here. </summary>
 	void virtual Draw(int elapsedTime);
 
+	/// <summary> Handles the baggage of loading a level from file. </summary>
 	void virtual LoadLevel(string levelName);
 
-	/// <summary> Takes collision with munchies </summary>
+	/// <summary> Takes collision with munchies. </summary>
 	bool virtual Collision(Vector2* Actor, Rect* ActorRect, Vector2* Target, Rect* TargetRect);
+	bool virtual Collision(float actorX, float actorY, Vector2* Target, Rect* TargetRect);
+
+	/// <summary> Checks valid AI pathfinding. </summary>
+	void virtual gridCheck(int levelArray[24][32], MovingEnemy*, int Offset, int elapsedTime);
 };

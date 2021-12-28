@@ -9,7 +9,6 @@ Pacman::Pacman(int argc, char* argv[])
 	: Game(argc, argv), _pacman(), _munchie(), _cSpeed(0.25f), _cPacmanFrameTime(250), _cMunchieFrameTime(25000), _cCherryFrameTime(500)
 {
 	_pacman  = new Player();
-	_selfCollision = false;
 
 	_cherry	 = new Enemy();
 	
@@ -26,10 +25,14 @@ Pacman::Pacman(int argc, char* argv[])
 	//Initialise important Game aspects
 	Audio::Initialise();
 	Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Pacman", 60);
+	gridX = Graphics::GetViewportWidth() / 32;
+	gridY = Graphics::GetViewportHeight() / 24;
 	Input::Initialise();
 
 	// Start the Game Loop - This calls Update and Draw in game loop
 	Graphics::StartGameLoop();
+
+
 }
 
 Pacman::~Pacman()
@@ -69,6 +72,8 @@ void Pacman::LoadLevel(string levelName)
 	munchie = 0;
 	ghost = 0;
 
+	masterGrid[23][31] = { 0 };
+
 	Texture2D* munchieTex = new Texture2D();
 	munchieTex->Load("Textures/Munchie.png", false);
 
@@ -91,6 +96,9 @@ void Pacman::LoadLevel(string levelName)
 					_wall[wall]->_Texture = wallTex;
 					_wall[wall]->_Position = new Vector2(xOfset, yOfset);
 					_wall[wall]->_SourceRect = new Rect(0.0f, 0.0f, 32, 32);
+
+					masterGrid[(int(ifs.tellg()) / 34) - 1][i] = 1;
+					
 					wall++;
 				}
 				else if (line[i] == 'o') {
@@ -107,8 +115,9 @@ void Pacman::LoadLevel(string levelName)
 					_ghost[ghost]->_Direction = 0;
 					_ghost[ghost]->_Speed = 0.2f;
 					_ghost[ghost]->_Texture = ghostTex;
-					_ghost[ghost]->_Position = new Vector2(xOfset + 6, yOfset + 6);
-					_ghost[ghost]->_sourceRect = new Rect(0.0f, 0.0f, 20, 20);
+					_ghost[ghost]->_Position = new Vector2(xOfset, yOfset);
+					_ghost[ghost]->_centerPosition = new Vector2(0 ,0);
+					_ghost[ghost]->_sourceRect = new Rect(0.0f, 0.0f, 32, 32);
 					ghost++;
 				}
 			}
@@ -127,11 +136,11 @@ void Pacman::LoadContent()
 	_pacman->_Texture = new Texture2D();
 	_pacman->_Texture->Load("Textures/Pacman.png", false);
 	_pacman->_Position = new Vector2(350.0f, 350.0f);
-	_pacman->_sourceRect = new Rect(350.0f, 350.0f, 28, 28);
+	_pacman->_sourceRect = new Rect(0, 0, 28, 28);
+	_pacman->_centerPosition = new Vector2(0,0);
 
 	_eat1->Load("Sounds/eat1.wav");
 	_eat2->Load("Sounds/eat2.wav");
-	
 	
 	// Load Cherry
 	_cherry->_Texture = new Texture2D();
@@ -147,6 +156,8 @@ void Pacman::LoadContent()
 
 	// Set string position
 	_stringPosition = new Vector2(Graphics::GetViewportWidth() / 2 - 50, 50.0f);
+
+
 }
 
 void Pacman::Update(int elapsedTime)
@@ -161,7 +172,7 @@ void Pacman::Update(int elapsedTime)
 	}	
 	else
 	{
-		if (gameState != Paused)
+		if (gameState != Paused && gameState != MainMenu)
 		{
 			Input(elapsedTime, keyboardState, mouseState);
 			CheckViewportCollision();
@@ -194,13 +205,13 @@ void Pacman::Draw(int elapsedTime)
 		SpriteBatch::Draw(_munchie[i]->_Texture, _munchie[i]->_Position, _munchie[i]->_Rect);
 		_munchie[i]->_Rect->X = _munchie[i]->_Rect->Width * _munchie[i]->_frameCount;
 	}
-	
-	for (int i = 0; i < ghost; i++) {
-		SpriteBatch::Draw(_ghost[i]->_Texture, _ghost[i]->_Position, _ghost[i]->_sourceRect);
-	}
 
 	for (int i = 0; i < wall; i++)
 		SpriteBatch::Draw(_wall[i]->_Texture, _wall[i]->_Position, _wall[i]->_SourceRect);
+
+	for (int i = 0; i < ghost; i++) {
+		SpriteBatch::Draw(_ghost[i]->_Texture, _ghost[i]->_Position, _ghost[i]->_sourceRect);
+	}
 
 	_pacman->_sourceRect->X = _pacman->_sourceRect->Width * _pacman->_Frame;
 
@@ -236,6 +247,17 @@ bool Pacman::Collision(Vector2* Actor, Rect* ActorRect, Vector2* Target, Rect* T
 		&&	Actor->Y + ActorRect->Height > Target->Y
 		&&	Actor->X < Target->X + TargetRect->Width
 		&&	Actor->Y < Target->Y + TargetRect->Height)
+	{
+		return true;
+	}
+	else return false;
+}
+
+bool Pacman::Collision(float actorX, float actorY, Vector2* Target, Rect* TargetRect) {
+	if (actorX > Target->X
+		&& actorY > Target->Y
+		&& actorX < Target->X + TargetRect->Width
+		&& actorY < Target->Y + TargetRect->Height)
 	{
 		return true;
 	}
@@ -323,6 +345,11 @@ void Pacman::CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey) {
 
 void Pacman::UpdatePacman(int elapsedTime) {
 	if (gameState == Active) {
+		_pacman->_centerPosition->X = _pacman->_Position->X + _pacman->_sourceRect->Width / 2;
+		_pacman->_centerPosition->Y = _pacman->_Position->Y + _pacman->_sourceRect->Height / 2;
+		/*_pacman->_gridPosX = _pacman->_centerPosition->X / gridX;
+		_pacman->_gridPosY = _pacman->_centerPosition->Y / gridY;*/
+		
 		_pacman->_currentFrameTime += elapsedTime;
 		if (_pacman->_currentFrameTime > _cPacmanFrameTime)
 		{
@@ -364,10 +391,6 @@ void Pacman::UpdatePacman(int elapsedTime) {
 				else if (_pacman->_movementState == 4) {
 					_pacman->_Position->Y -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 				}
-
-				/*if (_pacman->_Position->X + _pacman->_sourceRect->Width > _wall[i]->_Position->X + _wall[i]->_SourceRect->Width) {
-					_pacman->_Position->X = _wall[i]->_Position->X - _wall[i]->_SourceRect->Width;
-				}*/
 			}
 		}
 
@@ -415,31 +438,84 @@ void Pacman::UpdateCherry(int elapsedTime) {
 }
 
 float Pacman::distanceToPacman(float input, float input2) {
-	return sqrt(pow(input - _pacman->_Position->X, 2) + pow(input2 - _pacman->_Position->Y, 2));
+	return sqrt(pow(input - _pacman->_centerPosition->X, 2) + pow(input2 - _pacman->_centerPosition->Y, 2));
+}
+
+void Pacman::gridCheck(int levelArray[24][32], MovingEnemy* ghost, int Offset, int elapsedTime)
+{
+	int posX = ghost->_centerPosition->X / gridX;
+	int posY = ghost->_centerPosition->Y / gridY;
+
+	//cout << "Ghost position: " << posX << ", " << posY << endl;
+	//cout << "Pacman position: " << _pacman->_gridPosX << ", " << _pacman->_gridPosY << endl;
+
+	float choice[4];
+	choice[0] = distanceToPacman(ghost->_centerPosition->X + Offset * 32, ghost->_centerPosition->Y);
+	choice[1] = distanceToPacman(ghost->_centerPosition->X - Offset * 32, ghost->_centerPosition->Y);
+	choice[2] = distanceToPacman(ghost->_centerPosition->X, ghost->_centerPosition->Y + Offset * 24);
+	choice[3] = distanceToPacman(ghost->_centerPosition->X, ghost->_centerPosition->Y - Offset * 24);
+		
+	float choiceClone[4] = { choice[0], choice[1], choice[2], choice[3] };
+
+	if (levelArray[posY][posX + Offset] == 1 || ghost->_Direction == 1)
+		choice[0] = 9999;
+	if (levelArray[posY][posX - Offset] == 1 || ghost->_Direction == 0)
+		choice[1] = 9999;
+	if (levelArray[posY + Offset][posX] == 1 || ghost->_Direction == 3)
+		choice[2] = 9999;
+	if (levelArray[posY - Offset][posX] == 1 || ghost->_Direction == 2)
+		choice[3] = 9999;
+
+	for (int i = 0; i < 4; i++) {
+		if (choice[0] > choice[i]) {
+			choice[0] = choice[i];
+		}
+	}
+
+	for (int i = 0; i < 4; i++) {
+		if (choice[0] == choiceClone[i]) {
+			ghost->_Direction = i;
+		}
+	}
+
+	switch (ghost->_Direction)
+	{
+	case 0:
+		ghost->_Position->X += ghost->_Speed * elapsedTime;
+		break;
+	case 1:
+		ghost->_Position->X -= ghost->_Speed * elapsedTime;
+		break;
+	case 2:
+		ghost->_Position->Y += ghost->_Speed * elapsedTime;
+		break;
+	case 3:		
+		ghost->_Position->Y -= ghost->_Speed * elapsedTime;
+		break;
+	default:
+		break;
+	}
+
+	/* For Debugging Purposes!
+	*
+	for (int row = 0; row < 24; row++)
+	{
+		for (int column = 0; column < 32; column++)
+		{
+			cout << masterGrid[row][column] << ", ";
+		}
+		cout << endl;
+	}*/
 }
 
 void Pacman::UpdateGhost(MovingEnemy* ghosts, int elapsedtime) {
-	int gridX = Graphics::GetViewportWidth() / 64;
-	int gridY = Graphics::GetViewportHeight() / 64;
 
-	if (distanceToPacman(ghosts->_Position->X + gridX, ghosts->_Position->Y) < distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y))
-	{
-		ghosts->_Position->X += ghosts->_Speed * elapsedtime;
-		cout << "Right" << endl;
-	}
-	else if (distanceToPacman(ghosts->_Position->X - gridX, ghosts->_Position->Y) < distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y))
-	{
-		ghosts->_Position->X -= ghosts->_Speed * elapsedtime;
-		cout << "Left" << endl;
-	}
-	else if (distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y + gridY) < distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y))
-	{
-		ghosts->_Position->Y += ghosts->_Speed * elapsedtime;
-		cout << "Down" << endl;
-	}
-	else if (distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y - gridY) < distanceToPacman(ghosts->_Position->X, ghosts->_Position->Y))
-	{
-		ghosts->_Position->Y -= ghosts->_Speed * elapsedtime;
-		cout << "Up" << endl;
+	ghosts->_centerPosition->X = ghosts->_Position->X + ghosts->_sourceRect->Width / 2;
+	ghosts->_centerPosition->Y = ghosts->_Position->Y + ghosts->_sourceRect->Height / 2;
+
+	float distance = distanceToPacman(ghosts->_centerPosition->X, ghosts->_centerPosition->Y);
+
+	for (int i = 0; i < ghost; i++) {
+		gridCheck(masterGrid, _ghost[i], 1, elapsedtime);
 	}
 }
