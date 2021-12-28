@@ -175,7 +175,6 @@ void Pacman::Update(int elapsedTime)
 		if (gameState != Paused && gameState != MainMenu)
 		{
 			Input(elapsedTime, keyboardState, mouseState);
-			CheckViewportCollision();
 			UpdatePacman(elapsedTime);
 
 			for (int i = 0; i < ghost; i++) {
@@ -309,7 +308,7 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 	}
 };
 
-void Pacman::CheckViewportCollision()
+void Pacman::CheckViewportCollision(Player* _pacman)
 {
 	// Controls Pacman's screen wrapping, teleporting him to the other end of the screen if he reaches the end of the viewport
 	#pragma region ScreenWrapper
@@ -325,6 +324,24 @@ void Pacman::CheckViewportCollision()
 	if (_pacman->_Position->Y < 0 - _pacman->_sourceRect->Width)
 		_pacman->_Position->Y = Graphics::GetViewportHeight() + _pacman->_sourceRect->Width;
 	#pragma endregion
+}
+
+void Pacman::CheckViewportCollision(MovingEnemy* _pacman)
+{
+	// Controls Pacman's screen wrapping, teleporting him to the other end of the screen if he reaches the end of the viewport
+#pragma region ScreenWrapper
+	if (_pacman->_Position->X > Graphics::GetViewportWidth() + _pacman->_sourceRect->Width)
+		_pacman->_Position->X = 0 - _pacman->_sourceRect->Width;
+
+	if (_pacman->_Position->X < 0 - _pacman->_sourceRect->Width)
+		_pacman->_Position->X = Graphics::GetViewportWidth() + _pacman->_sourceRect->Width;
+
+	if (_pacman->_Position->Y > Graphics::GetViewportHeight() + _pacman->_sourceRect->Width)
+		_pacman->_Position->Y = 0 - _pacman->_sourceRect->Width;
+
+	if (_pacman->_Position->Y < 0 - _pacman->_sourceRect->Width)
+		_pacman->_Position->Y = Graphics::GetViewportHeight() + _pacman->_sourceRect->Width;
+#pragma endregion
 }
 
 void Pacman::CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey) {
@@ -347,8 +364,8 @@ void Pacman::UpdatePacman(int elapsedTime) {
 	if (gameState == Active) {
 		_pacman->_centerPosition->X = _pacman->_Position->X + _pacman->_sourceRect->Width / 2;
 		_pacman->_centerPosition->Y = _pacman->_Position->Y + _pacman->_sourceRect->Height / 2;
-		/*_pacman->_gridPosX = _pacman->_centerPosition->X / gridX;
-		_pacman->_gridPosY = _pacman->_centerPosition->Y / gridY;*/
+
+		CheckViewportCollision(_pacman);
 		
 		_pacman->_currentFrameTime += elapsedTime;
 		if (_pacman->_currentFrameTime > _cPacmanFrameTime)
@@ -377,7 +394,7 @@ void Pacman::UpdatePacman(int elapsedTime) {
 			}
 		}
 
-		for (int i = 0; i < wall; i++) {
+		/*for (int i = 0; i < wall; i++) {
 			if (Collision(_pacman->_Position, _pacman->_sourceRect, _wall[i]->_Position, _wall[i]->_SourceRect)) {
 				if (_pacman->_movementState == 1) {
 					_pacman->_Position->X -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
@@ -392,7 +409,7 @@ void Pacman::UpdatePacman(int elapsedTime) {
 					_pacman->_Position->Y -= _cSpeed * elapsedTime * _pacman->_speedMultiplier;
 				}
 			}
-		}
+		}*/
 
 		if (Collision(_pacman->_Position, _pacman->_sourceRect, _cherry->_Position, _cherry->_Rect)) {
 			delete _cherry->_Rect;
@@ -446,9 +463,6 @@ void Pacman::gridCheck(int levelArray[24][32], MovingEnemy* ghost, int Offset, i
 	int posX = ghost->_centerPosition->X / gridX;
 	int posY = ghost->_centerPosition->Y / gridY;
 
-	//cout << "Ghost position: " << posX << ", " << posY << endl;
-	//cout << "Pacman position: " << _pacman->_gridPosX << ", " << _pacman->_gridPosY << endl;
-
 	float choice[4];
 	choice[0] = distanceToPacman(ghost->_centerPosition->X + Offset * 32, ghost->_centerPosition->Y);
 	choice[1] = distanceToPacman(ghost->_centerPosition->X - Offset * 32, ghost->_centerPosition->Y);
@@ -495,17 +509,6 @@ void Pacman::gridCheck(int levelArray[24][32], MovingEnemy* ghost, int Offset, i
 	default:
 		break;
 	}
-
-	/* For Debugging Purposes!
-	*
-	for (int row = 0; row < 24; row++)
-	{
-		for (int column = 0; column < 32; column++)
-		{
-			cout << masterGrid[row][column] << ", ";
-		}
-		cout << endl;
-	}*/
 }
 
 void Pacman::UpdateGhost(MovingEnemy* ghosts, int elapsedtime) {
@@ -517,5 +520,6 @@ void Pacman::UpdateGhost(MovingEnemy* ghosts, int elapsedtime) {
 
 	for (int i = 0; i < ghost; i++) {
 		gridCheck(masterGrid, _ghost[i], 1, elapsedtime);
+		CheckViewportCollision(_ghost[i]);
 	}
 }

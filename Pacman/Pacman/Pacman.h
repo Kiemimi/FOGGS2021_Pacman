@@ -112,7 +112,8 @@ private:
 	float		distanceToPacman(float input, float input2);
 	
 	// Pacman data
-	void		CheckViewportCollision();
+	void		CheckViewportCollision(Player*);
+	void		CheckViewportCollision(MovingEnemy*);
 	void		UpdatePacman(int elapsedTime);
 	const float _cSpeed;
 	const int	_cPacmanFrameTime;
