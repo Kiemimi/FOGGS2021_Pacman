@@ -1,6 +1,7 @@
 #pragma once
 #define MUNCHIECOUNT 500
 #define GHOSTCOUNT 1
+#define CHERRYCOUNT 8
 #define WALLCOUNT 501
 
 // If Windows and not in Debug, this will run without a console window
@@ -41,10 +42,14 @@ struct Player
 	int			_Score;
 	int			_movementState;
 	int			_currentFrameTime;
-	int			_Frame;
+	int			_FrameX;
+	int			_FrameY;
 	int			_soundState;
 	float		_speedMultiplier;
 	bool		_pKeyDown;
+	bool		_pacmanDead;
+	bool		_powerUp;
+	int			_powerUpTime;
 };
 
 struct Enemy
@@ -84,7 +89,7 @@ private:
 	// Entities In game
 	Player*			_pacman;
 	Enemy*			_munchie[MUNCHIECOUNT];
-	Enemy*			_cherry;
+	Enemy*			_cherry[CHERRYCOUNT];
 	MovingEnemy*	_ghost[GHOSTCOUNT];
 	ColliderObject* _wall[WALLCOUNT];
 
@@ -92,10 +97,15 @@ private:
 	int				wall;
 	int				munchie;
 	int				ghost;
+	int				cherry;
 
 	// Assets
 	SoundEffect*	_eat1;
 	SoundEffect*	_eat2;
+	SoundEffect*	_Cherry;
+	SoundEffect*	_Death;
+	SoundEffect*	_Hit;
+	SoundEffect*	_Select;
 
 	// Tile System Variable
 	void		UpdateGhost(MovingEnemy*, int elapsedTime);
@@ -108,7 +118,7 @@ private:
 
 	// Update Methods
 	void		UpdateMunchie(Enemy*, int elapsedTime);
-	void		UpdateCherry(int elapsedTime);
+	void		UpdateCherry(Enemy*, int elapsedTime);
 	float		distanceToPacman(float input, float input2);
 	
 	// Pacman data
@@ -124,6 +134,7 @@ private:
 	void		CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey);
 	Vector2*	_stringPosition;
 	Texture2D*	_menuBackground; 
+	Texture2D* _pauseBackground;
 	Rect*		_menuRectangle; 
 	Vector2*	_menuStringPosition; 
 
